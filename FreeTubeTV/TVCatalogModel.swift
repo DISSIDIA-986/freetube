@@ -78,7 +78,25 @@ final class TVCatalogModel {
                 data: [.query: video.id]
             )
             if let streamingURL = response.streamingURL { return streamingURL }
-            if let progressive = response.defaultFormats.first(where: { $0.url != nil })?.url {
+            if let progressive = response.defaultFormats.compactMap(\.url).first {
+                return progressive
+            }
+
+            // VideoInfosResponse often returns format metadata without signed URLs. The
+            // download-format response runs YouTubeKit's URL deciphering path and usually
+            // supplies a combined audio/video MP4 that AVPlayer can consume directly.
+            let detailed = try await VideoInfosWithDownloadFormatsResponse.sendThrowingRequest(
+                youtubeModel: youtube,
+                data: [.query: video.id]
+            )
+            if let streamingURL = detailed.videoInfos.streamingURL { return streamingURL }
+            if let progressive = detailed.defaultFormats.compactMap(\.url).first {
+                return progressive
+            }
+            if let progressive = detailed.downloadFormats
+                .compactMap({ $0 as? VideoDownloadFormat })
+                .compactMap(\.url)
+                .first {
                 return progressive
             }
             throw TVCatalogError.noPlayableStream

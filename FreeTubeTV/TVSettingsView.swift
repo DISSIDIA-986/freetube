@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct TVSettingsView: View {
+    let onReturnHome: () -> Void
     @Environment(TVCatalogModel.self) private var model
     @Environment(TVLibraryStore.self) private var library
     @State private var gatewayHost = ""
@@ -31,7 +32,7 @@ struct TVSettingsView: View {
                     get: { model.regionProfile },
                     set: { profile in
                         model.updateRegionProfile(profile)
-                        Task { await model.loadHome() }
+                        Task { await model.reloadHome() }
                     }
                 )) {
                     ForEach(TVRegionProfile.allCases) { profile in
@@ -54,11 +55,15 @@ struct TVSettingsView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+            Section {
+                Button("Back to Home", action: onReturnHome)
+            }
         }
         .formStyle(.grouped)
         .padding(60)
         .navigationTitle("Settings")
         .onAppear { gatewayHost = model.gatewayHost }
+        .onExitCommand(perform: onReturnHome)
     }
 
     private var statusColor: Color {

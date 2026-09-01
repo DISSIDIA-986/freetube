@@ -83,6 +83,12 @@ final class TVCatalogModel {
         }
     }
 
+    func reloadHome() async {
+        homeVideos = []
+        errorMessage = nil
+        await loadHome()
+    }
+
     func search() async {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {

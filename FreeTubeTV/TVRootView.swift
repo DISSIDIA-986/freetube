@@ -44,7 +44,10 @@ struct TVRootView: View {
             if model.isLoading {
                 ProgressView("Searching…")
             } else if let errorMessage = model.errorMessage {
-                ContentUnavailableView("Nothing to show", systemImage: "wifi.exclamationmark", description: Text(errorMessage))
+                VStack(spacing: 20) {
+                    ContentUnavailableView("Nothing to show", systemImage: "wifi.exclamationmark", description: Text(errorMessage))
+                    Button("Retry") { Task { await model.reloadHome() } }
+                }
             } else if model.isShowingSearchResults {
                 TVVideoShelf(title: "Search results", videos: model.videos) { selectedVideo = $0 }
             } else if model.homeVideos.isEmpty {
@@ -80,7 +83,7 @@ struct TVRootView: View {
     }
 
     private var settingsView: some View {
-        TVSettingsView()
+        TVSettingsView(onReturnHome: { selectedTab = 0 })
     }
 }
 

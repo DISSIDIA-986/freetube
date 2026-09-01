@@ -12,10 +12,12 @@
 		76DBB0C2BD3BB4F7D3CF34E5 /* TVRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA7346D696601E425A37FE7 /* TVRootView.swift */; };
 		7850B9D313F83619BDBF4C00 /* TVCatalogModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9904E75683EEF6F421126F37 /* TVCatalogModel.swift */; };
 		BA96D284CF99BAD877ADBCBA /* YouTubeKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1C32D16C8122F01D4F54921A /* YouTubeKit */; };
+		C09114E9E49E46C0EC2B7354 /* TVHLSResourceLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0915BF0AE6C90F9E171C8FF8 /* TVHLSResourceLoader.swift */; };
 		D8CE2E09BECBD330F49535A3 /* TVModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = DED442CD3E355E27269020EE /* TVModels.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0915BF0AE6C90F9E171C8FF8 /* TVHLSResourceLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVHLSResourceLoader.swift; sourceTree = "<group>"; };
 		3DA7346D696601E425A37FE7 /* TVRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVRootView.swift; sourceTree = "<group>"; };
 		8BD52D5DA652AFD4F461BFB3 /* FreeTubeTV.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FreeTubeTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9904E75683EEF6F421126F37 /* TVCatalogModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVCatalogModel.swift; sourceTree = "<group>"; };
@@ -57,6 +59,7 @@
 			children = (
 				E9ED407FEBB2A0DEDBCB72CF /* FreeTubeTVApp.swift */,
 				9904E75683EEF6F421126F37 /* TVCatalogModel.swift */,
+				0915BF0AE6C90F9E171C8FF8 /* TVHLSResourceLoader.swift */,
 				DED442CD3E355E27269020EE /* TVModels.swift */,
 				3DA7346D696601E425A37FE7 /* TVRootView.swift */,
 				B6EC86BF1513A267F3181611 /* TVVideoDetailView.swift */,
@@ -130,6 +133,7 @@
 			files = (
 				25CB87758FC755D345BB82BC /* FreeTubeTVApp.swift in Sources */,
 				7850B9D313F83619BDBF4C00 /* TVCatalogModel.swift in Sources */,
+				C09114E9E49E46C0EC2B7354 /* TVHLSResourceLoader.swift in Sources */,
 				D8CE2E09BECBD330F49535A3 /* TVModels.swift in Sources */,
 				76DBB0C2BD3BB4F7D3CF34E5 /* TVRootView.swift in Sources */,
 				5AE8ABE5BE3DAF6BCB93D0E9 /* TVVideoDetailView.swift in Sources */,

@@ -176,20 +176,15 @@ struct TVRootView: View {
 
     private func selectVideo(_ video: TVVideo, from videos: [TVVideo]) {
         selectedVideo = video
-        guard let index = videos.firstIndex(of: video) else {
-            playbackQueue = []
-            return
-        }
-        playbackQueue = Array(videos.dropFirst(index + 1))
+        playbackQueue = TVPlaybackQueue.remaining(after: video, in: videos)
     }
 
     private func playNextVideo() {
-        guard let next = playbackQueue.first else {
+        guard let next = TVPlaybackQueue.popNext(from: &playbackQueue) else {
             selectedVideo = nil
             playbackQueue = []
             return
         }
-        playbackQueue.removeFirst()
         selectedVideo = nil
         DispatchQueue.main.async {
             selectedVideo = next

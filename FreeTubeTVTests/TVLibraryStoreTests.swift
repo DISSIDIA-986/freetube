@@ -117,6 +117,24 @@ final class TVLibraryStoreTests: XCTestCase {
         XCTAssertEqual(state.selectedTab, 0)
     }
 
+    func testPlaybackQueueReturnsRemainingItemsInOrder() {
+        let videos = (0..<4).map { makeVideo(id: "video-\($0)") }
+        XCTAssertEqual(TVPlaybackQueue.remaining(after: videos[1], in: videos).map(\.id), ["video-2", "video-3"])
+    }
+
+    func testPlaybackQueueHandlesMissingAndLastItems() {
+        let videos = [makeVideo(id: "first"), makeVideo(id: "last")]
+        XCTAssertTrue(TVPlaybackQueue.remaining(after: videos[1], in: videos).isEmpty)
+        XCTAssertTrue(TVPlaybackQueue.remaining(after: makeVideo(id: "missing"), in: videos).isEmpty)
+    }
+
+    func testPlaybackQueuePopIsSafeForEmptyAndConsumesOnce() {
+        var queue = [makeVideo(id: "one")]
+        XCTAssertEqual(TVPlaybackQueue.popNext(from: &queue)?.id, "one")
+        XCTAssertNil(TVPlaybackQueue.popNext(from: &queue))
+        XCTAssertTrue(queue.isEmpty)
+    }
+
     private func makeVideo(id: String, publishedRelative: String? = nil) -> TVVideo {
         TVVideo(id: id, title: "Title \(id)", channel: "Channel", thumbnailURL: nil, duration: "1:00", publishedRelative: publishedRelative)
     }

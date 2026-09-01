@@ -87,21 +87,16 @@ struct TVVideoDetailView: View {
             TVCollectionView(collection: collection) { selected, videos in
                 channelCollection = nil
                 channelVideo = selected
-                guard let index = videos.firstIndex(of: selected) else {
-                    channelPlaybackQueue = []
-                    return
-                }
-                channelPlaybackQueue = Array(videos.dropFirst(index + 1))
+                channelPlaybackQueue = TVPlaybackQueue.remaining(after: selected, in: videos)
             }
         }
         .fullScreenCover(item: $channelVideo) { selected in
             TVVideoDetailView(video: selected) {
-                guard let next = channelPlaybackQueue.first else {
+                guard let next = TVPlaybackQueue.popNext(from: &channelPlaybackQueue) else {
                     channelVideo = nil
                     channelPlaybackQueue = []
                     return
                 }
-                channelPlaybackQueue.removeFirst()
                 channelVideo = nil
                 DispatchQueue.main.async {
                     channelVideo = next

@@ -8,6 +8,21 @@ packages:
   YouTubeKit:
     url: https://github.com/b5i/YouTubeKit
     branch: main
+schemes:
+  FreeTubeTVTests:
+    build:
+      targets:
+        FreeTubeTVTests: test
+    test:
+      targets:
+        - name: FreeTubeTVTests
+  FreeTubeTVUITests:
+    build:
+      targets:
+        FreeTubeTVUITests: test
+    test:
+      targets:
+        - name: FreeTubeTVUITests
 targets:
   FreeTubeTV:
     type: application
@@ -42,6 +57,20 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.neoniu.FreeTubeTVTests
         PRODUCT_NAME: FreeTubeTVTests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: 5.0
+        DEVELOPMENT_TEAM: MA73Z27922
+    dependencies:
+      - target: FreeTubeTV
+  FreeTubeTVUITests:
+    type: bundle.ui-testing
+    platform: tvOS
+    sources:
+      - path: FreeTubeTVUITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.neoniu.FreeTubeTVUITests
+        PRODUCT_NAME: FreeTubeTVUITests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: 5.0
         DEVELOPMENT_TEAM: MA73Z27922

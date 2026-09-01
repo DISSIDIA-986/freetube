@@ -9,11 +9,13 @@
 /* Begin PBXBuildFile section */
 		25CB87758FC755D345BB82BC /* FreeTubeTVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9ED407FEBB2A0DEDBCB72CF /* FreeTubeTVApp.swift */; };
 		323AB7E9F24DDD0A11ABDCC5 /* TVAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC7B60723AF2F407C89B6C5 /* TVAccountView.swift */; };
+		49AB16D76D9D73DEB39A15C2 /* TVPlaybackQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95362B870DA6E63F2523DB4B /* TVPlaybackQueue.swift */; };
 		4F87ACF8DCE6A216C6EBD497 /* TVPairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB5DF63D4609AF1BB315A1EB /* TVPairingView.swift */; };
 		5AE8ABE5BE3DAF6BCB93D0E9 /* TVVideoDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6EC86BF1513A267F3181611 /* TVVideoDetailView.swift */; };
 		733733FAE032F7A40B5D8808 /* TVLibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAAD6207F5CCEC74A5AF85D4 /* TVLibraryStoreTests.swift */; };
 		76DBB0C2BD3BB4F7D3CF34E5 /* TVRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA7346D696601E425A37FE7 /* TVRootView.swift */; };
 		7850B9D313F83619BDBF4C00 /* TVCatalogModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9904E75683EEF6F421126F37 /* TVCatalogModel.swift */; };
+		8767D65F36F0F0B51740290D /* FreeTubeTVUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805EC4E3D8A46D2C0A67C28A /* FreeTubeTVUITests.swift */; };
 		A34D16000AA6653F02797129 /* TVPlaybackDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 351572DFF9D5864BF47DFF72 /* TVPlaybackDiagnostics.swift */; };
 		A957860A3F7DB2848426E354 /* TVSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2CB88C220535CAD3E178AD /* TVSettingsView.swift */; };
 		AD9F8F188279C213378F3E9E /* TVAppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44A88642ABC7666A5CA6C19C /* TVAppState.swift */; };
@@ -33,6 +35,13 @@
 			remoteGlobalIDString = C3DBFF9F8F8D6313975FB6F3;
 			remoteInfo = FreeTubeTV;
 		};
+		B0987A47705444CEBD0EE2A6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 30EC9B1485661D04B93DAD17 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C3DBFF9F8F8D6313975FB6F3;
+			remoteInfo = FreeTubeTV;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -43,8 +52,11 @@
 		44A88642ABC7666A5CA6C19C /* TVAppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVAppState.swift; sourceTree = "<group>"; };
 		4E3816F52C7F67724EEA4D7D /* TVLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVLibraryStore.swift; sourceTree = "<group>"; };
 		5795910477D4F1B96A225FE2 /* TVChannelVideoSorter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVChannelVideoSorter.swift; sourceTree = "<group>"; };
+		805EC4E3D8A46D2C0A67C28A /* FreeTubeTVUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeTubeTVUITests.swift; sourceTree = "<group>"; };
 		8BD52D5DA652AFD4F461BFB3 /* FreeTubeTV.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FreeTubeTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		90216709D07A5340FE2BFA25 /* TVPlayerSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVPlayerSurface.swift; sourceTree = "<group>"; };
+		942F7C9BCCC851B11F303084 /* FreeTubeTVUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FreeTubeTVUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		95362B870DA6E63F2523DB4B /* TVPlaybackQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVPlaybackQueue.swift; sourceTree = "<group>"; };
 		9904E75683EEF6F421126F37 /* TVCatalogModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVCatalogModel.swift; sourceTree = "<group>"; };
 		9AC7B60723AF2F407C89B6C5 /* TVAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVAccountView.swift; sourceTree = "<group>"; };
 		B6EC86BF1513A267F3181611 /* TVVideoDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVVideoDetailView.swift; sourceTree = "<group>"; };
@@ -73,6 +85,7 @@
 			children = (
 				BCE34EECEB5A5DB6AB142F29 /* FreeTubeTV */,
 				F3E68315C2B4C57C29914FF0 /* FreeTubeTVTests */,
+				F28CC1C0D6ABC24360591D25 /* FreeTubeTVUITests */,
 				BA0FD2714DA439093DF710DB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -82,6 +95,7 @@
 			children = (
 				8BD52D5DA652AFD4F461BFB3 /* FreeTubeTV.app */,
 				15012186D3ABCCBC47B7A373 /* FreeTubeTVTests.xctest */,
+				942F7C9BCCC851B11F303084 /* FreeTubeTVUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -100,12 +114,21 @@
 				DED442CD3E355E27269020EE /* TVModels.swift */,
 				CB5DF63D4609AF1BB315A1EB /* TVPairingView.swift */,
 				351572DFF9D5864BF47DFF72 /* TVPlaybackDiagnostics.swift */,
+				95362B870DA6E63F2523DB4B /* TVPlaybackQueue.swift */,
 				90216709D07A5340FE2BFA25 /* TVPlayerSurface.swift */,
 				3DA7346D696601E425A37FE7 /* TVRootView.swift */,
 				DA2CB88C220535CAD3E178AD /* TVSettingsView.swift */,
 				B6EC86BF1513A267F3181611 /* TVVideoDetailView.swift */,
 			);
 			path = FreeTubeTV;
+			sourceTree = "<group>";
+		};
+		F28CC1C0D6ABC24360591D25 /* FreeTubeTVUITests */ = {
+			isa = PBXGroup;
+			children = (
+				805EC4E3D8A46D2C0A67C28A /* FreeTubeTVUITests.swift */,
+			);
+			path = FreeTubeTVUITests;
 			sourceTree = "<group>";
 		};
 		F3E68315C2B4C57C29914FF0 /* FreeTubeTVTests */ = {
@@ -136,6 +159,24 @@
 			productName = FreeTubeTVTests;
 			productReference = 15012186D3ABCCBC47B7A373 /* FreeTubeTVTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		AA40D4B7DC149D3C75BC1A30 /* FreeTubeTVUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7950110F3CED9B9BF9168B14 /* Build configuration list for PBXNativeTarget "FreeTubeTVUITests" */;
+			buildPhases = (
+				BDB2DAE11584CA075558D6DE /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B4A1A4B4089DBC61751EF1EC /* PBXTargetDependency */,
+			);
+			name = FreeTubeTVUITests;
+			packageProductDependencies = (
+			);
+			productName = FreeTubeTVUITests;
+			productReference = 942F7C9BCCC851B11F303084 /* FreeTubeTVUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		C3DBFF9F8F8D6313975FB6F3 /* FreeTubeTV */ = {
 			isa = PBXNativeTarget;
@@ -168,6 +209,10 @@
 					755E76B46E561A2A6D21F7FF = {
 						DevelopmentTeam = MA73Z27922;
 					};
+					AA40D4B7DC149D3C75BC1A30 = {
+						DevelopmentTeam = MA73Z27922;
+						TestTargetID = C3DBFF9F8F8D6313975FB6F3;
+					};
 					C3DBFF9F8F8D6313975FB6F3 = {
 						DevelopmentTeam = MA73Z27922;
 						ProvisioningStyle = Automatic;
@@ -193,6 +238,7 @@
 			targets = (
 				C3DBFF9F8F8D6313975FB6F3 /* FreeTubeTV */,
 				755E76B46E561A2A6D21F7FF /* FreeTubeTVTests */,
+				AA40D4B7DC149D3C75BC1A30 /* FreeTubeTVUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -203,6 +249,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				733733FAE032F7A40B5D8808 /* TVLibraryStoreTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BDB2DAE11584CA075558D6DE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8767D65F36F0F0B51740290D /* FreeTubeTVUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -220,6 +274,7 @@
 				D8CE2E09BECBD330F49535A3 /* TVModels.swift in Sources */,
 				4F87ACF8DCE6A216C6EBD497 /* TVPairingView.swift in Sources */,
 				A34D16000AA6653F02797129 /* TVPlaybackDiagnostics.swift in Sources */,
+				49AB16D76D9D73DEB39A15C2 /* TVPlaybackQueue.swift in Sources */,
 				B91E3157298B9EEA14A1A1A0 /* TVPlayerSurface.swift in Sources */,
 				76DBB0C2BD3BB4F7D3CF34E5 /* TVRootView.swift in Sources */,
 				A957860A3F7DB2848426E354 /* TVSettingsView.swift in Sources */,
@@ -234,6 +289,11 @@
 			isa = PBXTargetDependency;
 			target = C3DBFF9F8F8D6313975FB6F3 /* FreeTubeTV */;
 			targetProxy = 70249D2EB77F0995D24D965B /* PBXContainerItemProxy */;
+		};
+		B4A1A4B4089DBC61751EF1EC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C3DBFF9F8F8D6313975FB6F3 /* FreeTubeTV */;
+			targetProxy = B0987A47705444CEBD0EE2A6 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -257,6 +317,26 @@
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FreeTubeTV.app/FreeTubeTV";
 			};
 			name = Debug;
+		};
+		90A8DF0C081B2944578509B3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = MA73Z27922;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.neoniu.FreeTubeTVUITests;
+				PRODUCT_NAME = FreeTubeTVUITests;
+				SDKROOT = appletvos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_TARGET_NAME = FreeTubeTV;
+			};
+			name = Release;
 		};
 		B2EE77B69C514B5F05078C3D /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -313,6 +393,26 @@
 				TVOS_DEPLOYMENT_TARGET = 17.0;
 			};
 			name = Release;
+		};
+		BA2D505CDCE2FDF4025674D9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = MA73Z27922;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.neoniu.FreeTubeTVUITests;
+				PRODUCT_NAME = FreeTubeTVUITests;
+				SDKROOT = appletvos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_TARGET_NAME = FreeTubeTV;
+			};
+			name = Debug;
 		};
 		CDAC865CD47CB00E4D4BE2FE /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -459,6 +559,15 @@
 			buildConfigurations = (
 				EBA07276CF6088D849DD6187 /* Debug */,
 				B2EE77B69C514B5F05078C3D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7950110F3CED9B9BF9168B14 /* Build configuration list for PBXNativeTarget "FreeTubeTVUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BA2D505CDCE2FDF4025674D9 /* Debug */,
+				90A8DF0C081B2944578509B3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

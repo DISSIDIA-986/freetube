@@ -20,6 +20,7 @@ struct TVVideoDetailView: View {
     @State private var selectedResolution: Int
     @State private var channelCollection: TVCollection?
     @State private var channelVideo: TVVideo?
+    @State private var channelPlaybackQueue: [TVVideo] = []
     @State private var isLookingUpChannel = false
     @State private var channelLookupFailed = false
     @State private var playbackAttempt = 0
@@ -83,13 +84,29 @@ struct TVVideoDetailView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.black)
         .sheet(item: $channelCollection) { collection in
-            TVCollectionView(collection: collection) { selected in
+            TVCollectionView(collection: collection) { selected, videos in
                 channelCollection = nil
                 channelVideo = selected
+                guard let index = videos.firstIndex(of: selected) else {
+                    channelPlaybackQueue = []
+                    return
+                }
+                channelPlaybackQueue = Array(videos.dropFirst(index + 1))
             }
         }
         .fullScreenCover(item: $channelVideo) { selected in
-            TVVideoDetailView(video: selected)
+            TVVideoDetailView(video: selected) {
+                guard let next = channelPlaybackQueue.first else {
+                    channelVideo = nil
+                    channelPlaybackQueue = []
+                    return
+                }
+                channelPlaybackQueue.removeFirst()
+                channelVideo = nil
+                DispatchQueue.main.async {
+                    channelVideo = next
+                }
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime)) { notification in
             guard let finishedItem = notification.object as? AVPlayerItem,

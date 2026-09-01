@@ -31,6 +31,11 @@ struct TVVideoDetailView: View {
             do {
                 let source = try await model.playbackSource(for: video)
                 let url = source.videoURL
+                if source.audioURL == nil && source.videoURL.host == "192.168.1.79" {
+                    let item = AVPlayerItem(url: source.videoURL)
+                    playerItem = item
+                    player = AVPlayer(playerItem: item)
+                } else {
                 // Route both HLS and progressive MP4 through the same loader. AVPlayer's
                 // direct MP4 requests use its own User-Agent and are rejected by YouTube's
                 // CDN with HTTP 403 even though the signed URL works with our URLSession.
@@ -81,6 +86,7 @@ struct TVVideoDetailView: View {
                 let item = AVPlayerItem(asset: playbackAsset)
                 playerItem = item
                 player = AVPlayer(playerItem: item)
+                }
                 player?.automaticallyWaitsToMinimizeStalling = false
                 player?.play()
             } catch {

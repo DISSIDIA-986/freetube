@@ -24,6 +24,7 @@
 		90216709D07A5340FE2BFA25 /* TVPlayerSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVPlayerSurface.swift; sourceTree = "<group>"; };
 		9904E75683EEF6F421126F37 /* TVCatalogModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVCatalogModel.swift; sourceTree = "<group>"; };
 		B6EC86BF1513A267F3181611 /* TVVideoDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVVideoDetailView.swift; sourceTree = "<group>"; };
+		D4B84AFE1F0EEDC20FB06EA6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		DED442CD3E355E27269020EE /* TVModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVModels.swift; sourceTree = "<group>"; };
 		E9ED407FEBB2A0DEDBCB72CF /* FreeTubeTVApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeTubeTVApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -60,6 +61,7 @@
 			isa = PBXGroup;
 			children = (
 				E9ED407FEBB2A0DEDBCB72CF /* FreeTubeTVApp.swift */,
+				D4B84AFE1F0EEDC20FB06EA6 /* Info.plist */,
 				9904E75683EEF6F421126F37 /* TVCatalogModel.swift */,
 				0915BF0AE6C90F9E171C8FF8 /* TVHLSResourceLoader.swift */,
 				DED442CD3E355E27269020EE /* TVModels.swift */,
@@ -212,6 +214,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = MA73Z27922;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FreeTubeTV/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "FreeTube TV";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "FreeTube TV uses your network to load video content.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -238,6 +241,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = MA73Z27922;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FreeTubeTV/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "FreeTube TV";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "FreeTube TV uses your network to load video content.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

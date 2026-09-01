@@ -19,6 +19,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.neoniu.FreeTubeTV
         PRODUCT_NAME: FreeTubeTV
         GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: FreeTubeTV/Info.plist
         SWIFT_VERSION: 5.0
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
         SWIFT_APPROACHABLE_CONCURRENCY: YES

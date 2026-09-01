@@ -13,6 +13,7 @@ final class TVCatalogModel {
     var errorMessage: String?
 
     private let youtube = YouTubeModel()
+    private let gatewayBaseURL = URL(string: "http://192.168.1.79:8787")!
 
     func loadHome() async {
         guard homeVideos.isEmpty else { return }
@@ -72,6 +73,10 @@ final class TVCatalogModel {
     }
 
     func playbackSource(for video: TVVideo) async throws -> TVPlaybackSource {
+        if let gatewaySource = try? await resolveViaGateway(videoID: video.id) {
+            print("FreeTubeTV playback: using Mac gateway")
+            return gatewaySource
+        }
         print("FreeTubeTV playback: resolving \(video.id)")
         do {
             let response = try await VideoInfosResponse.sendThrowingRequest(
@@ -123,6 +128,18 @@ final class TVCatalogModel {
             // to diagnose from the device.
             throw error
         }
+    }
+
+    private func resolveViaGateway(videoID: String) async throws -> TVPlaybackSource {
+        var components = URLComponents(url: gatewayBaseURL.appendingPathComponent("resolve"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "id", value: videoID)]
+        let (data, response) = try await URLSession.shared.data(from: components.url!)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw TVCatalogError.requestFailed
+        }
+        struct GatewayResponse: Decodable { let url: URL }
+        let result = try JSONDecoder().decode(GatewayResponse.self, from: data)
+        return TVPlaybackSource(videoURL: result.url, audioURL: nil)
     }
 
     private func loadDiscoveryFallback() async throws {

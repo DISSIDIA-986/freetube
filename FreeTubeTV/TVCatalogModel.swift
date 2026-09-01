@@ -83,10 +83,16 @@ final class TVCatalogModel {
             // VideoInfosResponse often returns format metadata without signed URLs. The
             // download-format response runs YouTubeKit's URL deciphering path and usually
             // supplies a combined audio/video MP4 that AVPlayer can consume directly.
-            if let detailed = try? await VideoInfosWithDownloadFormatsResponse.sendThrowingRequest(
+            if var detailed = try? await VideoInfosWithDownloadFormatsResponse.sendThrowingRequest(
                 youtubeModel: youtube,
                 data: [.query: video.id]
             ) {
+                // The HTML response contains ciphered format URLs. YouTubeKit exposes the
+                // player needed to decode them on the nested VideoInfosResponse; without
+                // this call every MP4 URL remains nil and playback falls back to HLS.
+                if let player = detailed.videoInfos.player {
+                    try? detailed.deciphersURLs(player: player)
+                }
                 if let progressive = progressiveURL(from: detailed.defaultFormats) { return progressive }
                 if let progressive = progressiveURL(from: detailed.downloadFormats) { return progressive }
             }

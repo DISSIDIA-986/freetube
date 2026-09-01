@@ -187,15 +187,26 @@ final class TVCatalogModel {
     }
 
     private func loadDiscoveryFallback() async throws {
-        let response = try await SearchResponse.sendThrowingRequest(
-            youtubeModel: youtube,
-            data: [.query: regionProfile.discoveryQuery]
-        )
-        homeVideos = response.results.compactMap { result in
-            guard let video = result as? YTVideo else { return nil }
-            return makeVideo(from: video)
+        for query in regionProfile.discoveryQueries {
+            do {
+                let response = try await SearchResponse.sendThrowingRequest(
+                    youtubeModel: youtube,
+                    data: [.query: query]
+                )
+                let results: [TVVideo] = response.results.compactMap { result in
+                    guard let video = result as? YTVideo else { return nil }
+                    return makeVideo(from: video)
+                }
+                if !results.isEmpty {
+                    homeVideos = results
+                    return
+                }
+            } catch {
+                // Anonymous YouTube responses can reject one discovery query while
+                // still accepting another. Continue through the fallback list.
+            }
         }
-        if homeVideos.isEmpty { throw TVCatalogError.requestFailed }
+        throw TVCatalogError.requestFailed
     }
 
     private func progressiveURL(from formats: [any AdaptiveDownloadFormat]) -> URL? {

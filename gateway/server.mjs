@@ -17,7 +17,10 @@ function download(id) {
   const output = videoPath(id);
   const args = [
     "--no-playlist", "--newline", "--no-warnings",
-    "-f", "bv*[vcodec^=avc1]+ba[acodec^=mp4a]/b[ext=mp4][vcodec^=avc1][acodec^=mp4a]",
+    // A TV client should start quickly; downloading a 1080p two-hour source before
+    // playback can mean hundreds of MB. Keep the LAN gateway responsive at 480p.
+    "-f", "bv*[height<=480][vcodec^=avc1]+ba[acodec^=mp4a]/b[height<=480][ext=mp4][vcodec^=avc1][acodec^=mp4a]",
+    "--concurrent-fragments", "4",
     "--merge-output-format", "mp4",
     "-o", output,
     `https://www.youtube.com/watch?v=${id}`,

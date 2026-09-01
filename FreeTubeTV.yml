@@ -25,6 +25,7 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: FreeTube TV
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         INFOPLIST_KEY_NSLocalNetworkUsageDescription: FreeTube TV uses your network to load video content.
+        DEVELOPMENT_TEAM: MA73Z27922
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: Apple Development
         TARGETED_DEVICE_FAMILY: 3

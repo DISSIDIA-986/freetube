@@ -96,6 +96,7 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					C3DBFF9F8F8D6313975FB6F3 = {
+						DevelopmentTeam = MA73Z27922;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -201,6 +202,7 @@
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = MA73Z27922;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "FreeTube TV";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "FreeTube TV uses your network to load video content.";
@@ -226,6 +228,7 @@
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = MA73Z27922;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "FreeTube TV";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "FreeTube TV uses your network to load video content.";

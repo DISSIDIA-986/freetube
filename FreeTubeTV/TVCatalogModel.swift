@@ -268,9 +268,10 @@ final class TVCatalogModel {
     func loadCollection(_ collection: TVCollection) async throws -> [TVVideo] {
         switch collection.kind {
         case .playlist:
+            let playlistID = collection.id.hasPrefix("VL") ? collection.id : "VL" + collection.id
             var response = try await PlaylistInfosResponse.sendThrowingRequest(
                 youtubeModel: youtube,
-                data: [.browseId: collection.id]
+                data: [.browseId: playlistID]
             )
             while response.results.count < 200, response.continuationToken != nil {
                 let continuation = try await response.fetchContinuationThrowing(youtubeModel: youtube)
@@ -278,11 +279,19 @@ final class TVCatalogModel {
             }
             return response.results.map(makeVideo(from:))
         case .channel:
-            let response = try await ChannelInfosResponse.sendThrowingRequest(
+            var response = try await ChannelInfosResponse.sendThrowingRequest(
                 youtubeModel: youtube,
                 data: [.browseId: collection.id]
             )
-            guard let videos = response.currentContent as? ChannelInfosResponse.Videos else { return [] }
+            while response.channelContentContinuationStore[.videos] != nil {
+                let continuation = try await response.getChannelContentContinuationThrowing(
+                    ChannelInfosResponse.Videos.self,
+                    youtubeModel: youtube
+                )
+                response.mergeListableChannelContentContinuation(continuation)
+                if response.channelContentStore[.videos] == nil { break }
+            }
+            guard let videos = response.channelContentStore[.videos] as? ChannelInfosResponse.Videos ?? response.currentContent as? ChannelInfosResponse.Videos else { return [] }
             return videos.items.compactMap { result in
                 guard let video = result as? YTVideo else { return nil }
                 return makeVideo(from: video)
@@ -300,8 +309,8 @@ final class TVCatalogModel {
         errorMessage = nil
     }
 
-    func playbackSource(for video: TVVideo) async throws -> TVPlaybackSource {
-        if let gatewaySource = try? await resolveViaGateway(videoID: video.id) {
+    func playbackSource(for video: TVVideo, preferredHeight: Int? = nil) async throws -> TVPlaybackSource {
+        if let gatewaySource = try? await resolveViaGateway(videoID: video.id, preferredHeight: preferredHeight) {
             print("FreeTubeTV playback: using Mac gateway")
             return gatewaySource
         }
@@ -358,10 +367,13 @@ final class TVCatalogModel {
         }
     }
 
-    private func resolveViaGateway(videoID: String) async throws -> TVPlaybackSource {
+    private func resolveViaGateway(videoID: String, preferredHeight: Int?) async throws -> TVPlaybackSource {
         guard let gatewayBaseURL else { throw TVCatalogError.requestFailed }
         var components = URLComponents(url: gatewayBaseURL.appendingPathComponent("resolve"), resolvingAgainstBaseURL: false)!
         components.queryItems = [URLQueryItem(name: "id", value: videoID)]
+        if let preferredHeight {
+            components.queryItems?.append(URLQueryItem(name: "quality", value: String(preferredHeight)))
+        }
         let (data, response) = try await URLSession.shared.data(from: components.url!)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             throw TVCatalogError.requestFailed
@@ -472,6 +484,7 @@ final class TVCatalogModel {
             id: video.videoId,
             title: video.title ?? "Untitled video",
             channel: video.channel?.name ?? "YouTube",
+            channelID: video.channel?.channelId,
             thumbnailURL: video.thumbnails.last?.url,
             duration: video.timeLength ?? ""
         )

@@ -252,7 +252,7 @@ private struct TVCollectionShelf: View {
     }
 }
 
-private struct TVCollectionView: View {
+struct TVCollectionView: View {
     @Environment(TVCatalogModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     let collection: TVCollection

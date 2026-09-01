@@ -13,6 +13,11 @@ struct TVVideoDetailView: View {
     @State private var playbackMonitor: Task<Void, Never>?
     @State private var progressTask: Task<Void, Never>?
     @State private var localPlaybackURL: URL?
+    @State private var selectedResolution = 480
+    @State private var channelCollection: TVCollection?
+    @State private var channelVideo: TVVideo?
+
+    private let resolutionOptions = [360, 480, 720, 1080, 1440, 2160]
 
     var body: some View {
         ZStack {
@@ -41,6 +46,28 @@ struct TVVideoDetailView: View {
                         Label("Back", systemImage: "chevron.left")
                     }
                     .buttonStyle(.borderedProminent)
+                    Menu {
+                        ForEach(resolutionOptions, id: \.self) { resolution in
+                            Button("\(resolution)p") { selectedResolution = resolution }
+                        }
+                    } label: {
+                        Label("Resolution: \(selectedResolution)p", systemImage: "4k.tv")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    if let channelID = video.channelID {
+                        Button {
+                            channelCollection = TVCollection(
+                                id: channelID,
+                                title: "\(video.channel) · Latest videos",
+                                subtitle: "Newest first",
+                                thumbnailURL: nil,
+                                kind: .channel
+                            )
+                        } label: {
+                            Label("View channel", systemImage: "person.2")
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
                     Spacer()
                 }
                 .padding(.top, 36)
@@ -50,9 +77,22 @@ struct TVVideoDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.black)
-        .task {
+        .sheet(item: $channelCollection) { collection in
+            TVCollectionView(collection: collection) { selected in
+                channelCollection = nil
+                channelVideo = selected
+            }
+        }
+        .fullScreenCover(item: $channelVideo) { selected in
+            TVVideoDetailView(video: selected)
+        }
+        .task(id: selectedResolution) {
+            player?.pause()
+            player = nil
+            playerItem = nil
+            message = nil
             do {
-                let source = try await model.playbackSource(for: video)
+                let source = try await model.playbackSource(for: video, preferredHeight: selectedResolution)
                 library.recordHistory(video)
                 let url = source.videoURL
                 if source.audioURL == nil && isGatewayURL(source.videoURL) {

@@ -4,8 +4,18 @@ struct TVVideo: Identifiable, Hashable, Codable, Sendable {
     let id: String
     let title: String
     let channel: String
+    let channelID: String?
     let thumbnailURL: URL?
     let duration: String
+
+    init(id: String, title: String, channel: String, channelID: String? = nil, thumbnailURL: URL?, duration: String) {
+        self.id = id
+        self.title = title
+        self.channel = channel
+        self.channelID = channelID
+        self.thumbnailURL = thumbnailURL
+        self.duration = duration
+    }
 }
 
 struct TVPlaybackSource: Sendable {

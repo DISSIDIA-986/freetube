@@ -13,6 +13,12 @@ struct TVPlaybackSource: Sendable {
     let audioURL: URL?
 }
 
+struct TVAccount: Sendable {
+    let title: String
+    let channelID: String
+    let thumbnailURL: URL?
+}
+
 enum TVRegionProfile: String, CaseIterable, Identifiable, Sendable {
     case chinaChinese = "zh-CN"
     case northAmerica = "en-US"

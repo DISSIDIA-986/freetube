@@ -7,6 +7,7 @@ struct TVSettingsView: View {
     @State private var gatewayHost = ""
     @State private var gatewayStatus: GatewayStatus = .unknown
     @State private var showingPairing = false
+    @State private var showingAccount = false
 
     private enum GatewayStatus { case unknown, checking, online, offline }
 
@@ -45,6 +46,15 @@ struct TVSettingsView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+            Section("YouTube account") {
+                if let account = model.account {
+                    Label(account.title, systemImage: "person.crop.circle.fill")
+                    Text("Connected through the Mac gateway.").font(.footnote).foregroundStyle(.secondary)
+                } else {
+                    Text("Not connected").foregroundStyle(.secondary)
+                }
+                Button("Manage YouTube account") { showingAccount = true }
+            }
             Section("Local library") {
                 LabeledContent("Favorites", value: "\(library.favorites.count)")
                 LabeledContent("Watch history", value: "\(library.history.count)")
@@ -67,6 +77,7 @@ struct TVSettingsView: View {
         .onAppear { gatewayHost = model.gatewayHost }
         .onExitCommand(perform: onReturnHome)
         .sheet(isPresented: $showingPairing) { TVPairingView() }
+        .sheet(isPresented: $showingAccount) { TVAccountView() }
     }
 
     private var statusColor: Color {

@@ -14,6 +14,7 @@ final class TVCatalogModel {
     private(set) var isShowingSearchResults = false
     var errorMessage: String?
     private(set) var regionProfile: TVRegionProfile
+    private(set) var account: TVAccount?
 
     private let youtube = YouTubeModel()
     private(set) var gatewayHost: String
@@ -91,6 +92,18 @@ final class TVCatalogModel {
         } catch {
             return .failed
         }
+    }
+
+    func loadGatewayAccount() async -> Bool {
+        guard let base = gatewayBaseURL else { return false }
+        do {
+            let (data, response) = try await URLSession.shared.data(from: base.appendingPathComponent("account"))
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return false }
+            let result = try JSONDecoder().decode(AccountResponse.self, from: data)
+            guard result.signedIn, let title = result.title, let channelID = result.channelID else { account = nil; return false }
+            account = TVAccount(title: title, channelID: channelID, thumbnailURL: result.thumbnailURL)
+            return true
+        } catch { return false }
     }
 
     func loadHome() async {
@@ -354,4 +367,11 @@ private struct PairingResponse: Decodable {
 
 private struct PairingStatusResponse: Decodable {
     let status: String
+}
+
+private struct AccountResponse: Decodable {
+    let signedIn: Bool
+    let title: String?
+    let channelID: String?
+    let thumbnailURL: URL?
 }

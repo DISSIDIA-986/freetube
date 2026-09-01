@@ -44,6 +44,10 @@ struct TVRootView: View {
             HStack {
                 Text("FreeTube TV").font(.largeTitle.bold())
                 Spacer()
+                if let account = model.account {
+                    Label(account.title, systemImage: "person.crop.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
                 TextField("Search YouTube", text: Bindable(model).query)
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 18)
@@ -80,7 +84,10 @@ struct TVRootView: View {
             Spacer()
         }
         .padding(60)
-        .task { await model.loadHome() }
+        .task {
+            await model.loadHome()
+            _ = await model.loadGatewayAccount()
+        }
     }
 
     private var libraryView: some View {

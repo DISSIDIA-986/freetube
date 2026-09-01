@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		25CB87758FC755D345BB82BC /* FreeTubeTVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9ED407FEBB2A0DEDBCB72CF /* FreeTubeTVApp.swift */; };
+		323AB7E9F24DDD0A11ABDCC5 /* TVAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC7B60723AF2F407C89B6C5 /* TVAccountView.swift */; };
 		4F87ACF8DCE6A216C6EBD497 /* TVPairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB5DF63D4609AF1BB315A1EB /* TVPairingView.swift */; };
 		5AE8ABE5BE3DAF6BCB93D0E9 /* TVVideoDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6EC86BF1513A267F3181611 /* TVVideoDetailView.swift */; };
 		733733FAE032F7A40B5D8808 /* TVLibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAAD6207F5CCEC74A5AF85D4 /* TVLibraryStoreTests.swift */; };
@@ -39,6 +40,7 @@
 		8BD52D5DA652AFD4F461BFB3 /* FreeTubeTV.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FreeTubeTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		90216709D07A5340FE2BFA25 /* TVPlayerSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVPlayerSurface.swift; sourceTree = "<group>"; };
 		9904E75683EEF6F421126F37 /* TVCatalogModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVCatalogModel.swift; sourceTree = "<group>"; };
+		9AC7B60723AF2F407C89B6C5 /* TVAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVAccountView.swift; sourceTree = "<group>"; };
 		B6EC86BF1513A267F3181611 /* TVVideoDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVVideoDetailView.swift; sourceTree = "<group>"; };
 		CB5DF63D4609AF1BB315A1EB /* TVPairingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVPairingView.swift; sourceTree = "<group>"; };
 		D4B84AFE1F0EEDC20FB06EA6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -83,6 +85,7 @@
 			children = (
 				E9ED407FEBB2A0DEDBCB72CF /* FreeTubeTVApp.swift */,
 				D4B84AFE1F0EEDC20FB06EA6 /* Info.plist */,
+				9AC7B60723AF2F407C89B6C5 /* TVAccountView.swift */,
 				9904E75683EEF6F421126F37 /* TVCatalogModel.swift */,
 				0915BF0AE6C90F9E171C8FF8 /* TVHLSResourceLoader.swift */,
 				4E3816F52C7F67724EEA4D7D /* TVLibraryStore.swift */,
@@ -199,6 +202,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				25CB87758FC755D345BB82BC /* FreeTubeTVApp.swift in Sources */,
+				323AB7E9F24DDD0A11ABDCC5 /* TVAccountView.swift in Sources */,
 				7850B9D313F83619BDBF4C00 /* TVCatalogModel.swift in Sources */,
 				C09114E9E49E46C0EC2B7354 /* TVHLSResourceLoader.swift in Sources */,
 				E419149E77413CAAB07296C2 /* TVLibraryStore.swift in Sources */,

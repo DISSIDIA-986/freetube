@@ -1,5 +1,6 @@
 import http from "node:http";
 import { spawn } from "node:child_process";
+import { createHash, randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, statSync, createReadStream } from "node:fs";
 import { join } from "node:path";
 import { URL } from "node:url";
@@ -10,6 +11,10 @@ const cacheDir = join(process.cwd(), "gateway-cache");
 mkdirSync(cacheDir, { recursive: true });
 const jobs = new Map();
 const pairings = new Map();
+const oauthStates = new Map();
+const auth = { accessToken: null, refreshToken: null, expiresAt: 0 };
+const googleClientID = process.env.FREETUBE_GOOGLE_CLIENT_ID ?? "";
+const oauthRedirectURI = process.env.FREETUBE_GOOGLE_REDIRECT_URI ?? `http://127.0.0.1:${port}/oauth/callback`;
 
 function videoPath(id) { return join(cacheDir, `${id}.mp4`); }
 
@@ -68,6 +73,55 @@ function pairPage() {
   <script>document.querySelector('form').onsubmit=async e=>{e.preventDefault();let code=document.querySelector('#code').value;let r=await fetch('/pair/confirm?code='+encodeURIComponent(code),{method:'POST'});let j=await r.json();document.querySelector('#status').textContent=r.ok?'Paired successfully. Return to Apple TV.':(j.error||'Pairing failed');}</script>`;
 }
 
+function html(res, status, body) {
+  res.writeHead(status, { "Content-Type": "text/html; charset=utf-8", "Content-Length": Buffer.byteLength(body) });
+  res.end(body);
+}
+
+function oauthPage(message) {
+  return `<!doctype html><meta name="viewport" content="width=device-width"><title>FreeTube YouTube account</title><style>body{font:20px system-ui;max-width:640px;margin:48px auto;padding:0 24px;background:#111;color:#eee}</style><h1>FreeTube YouTube account</h1><p>${message}</p><p>You can close this page and return to Apple TV.</p>`;
+}
+
+function oauthStartURL() {
+  const state = randomBytes(24).toString("base64url");
+  const verifier = randomBytes(48).toString("base64url");
+  const challenge = createHash("sha256").update(verifier).digest("base64url");
+  oauthStates.set(state, { verifier, expiresAt: Date.now() + 10 * 60 * 1000 });
+  const params = new URLSearchParams({ client_id: googleClientID, redirect_uri: oauthRedirectURI, response_type: "code", access_type: "offline", prompt: "consent", scope: "openid email profile https://www.googleapis.com/auth/youtube.readonly", state, code_challenge: challenge, code_challenge_method: "S256" });
+  return `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+}
+
+async function exchangeOAuthCode(code, verifier) {
+  const body = new URLSearchParams({ code, client_id: googleClientID, client_secret: process.env.FREETUBE_GOOGLE_CLIENT_SECRET ?? "", redirect_uri: oauthRedirectURI, grant_type: "authorization_code", code_verifier: verifier });
+  const response = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error_description ?? result.error ?? "OAuth token exchange failed");
+  auth.accessToken = result.access_token;
+  auth.refreshToken = result.refresh_token ?? auth.refreshToken;
+  auth.expiresAt = Date.now() + (result.expires_in ?? 3600) * 1000;
+}
+
+async function accessToken() {
+  if (auth.accessToken && auth.expiresAt > Date.now() + 60_000) return auth.accessToken;
+  if (!auth.refreshToken) return null;
+  const body = new URLSearchParams({ client_id: googleClientID, client_secret: process.env.FREETUBE_GOOGLE_CLIENT_SECRET ?? "", refresh_token: auth.refreshToken, grant_type: "refresh_token" });
+  const response = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body });
+  const result = await response.json();
+  if (!response.ok) { auth.accessToken = null; auth.refreshToken = null; throw new Error(result.error_description ?? "Google session expired"); }
+  auth.accessToken = result.access_token;
+  auth.expiresAt = Date.now() + (result.expires_in ?? 3600) * 1000;
+  return auth.accessToken;
+}
+
+async function youtubeAPI(path) {
+  const token = await accessToken();
+  if (!token) return null;
+  const response = await fetch(`https://www.googleapis.com/youtube/v3/${path}`, { headers: { Authorization: `Bearer ${token}` } });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error?.message ?? "YouTube API request failed");
+  return result;
+}
+
 function serveFile(req, res, file) {
   const size = statSync(file).size;
   const range = req.headers.range?.match(/bytes=(\d+)-(\d*)/);
@@ -93,6 +147,38 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host ?? "localhost"}`);
     if (url.pathname === "/healthz") return json(res, 200, { status: "ok" });
     prunePairings();
+    for (const [state, item] of oauthStates) if (item.expiresAt < Date.now()) oauthStates.delete(state);
+    if (url.pathname === "/oauth/start" && req.method === "GET") {
+      if (!googleClientID) return json(res, 503, { error: "FREETUBE_GOOGLE_CLIENT_ID is not configured" });
+      res.writeHead(302, { Location: oauthStartURL() });
+      return res.end();
+    }
+    if (url.pathname === "/oauth/callback" && req.method === "GET") {
+      const state = url.searchParams.get("state");
+      const item = state && oauthStates.get(state);
+      if (!item || item.expiresAt < Date.now()) return html(res, 400, oauthPage("This Google sign-in link expired. Start again from the account page."));
+      oauthStates.delete(state);
+      try {
+        await exchangeOAuthCode(url.searchParams.get("code"), item.verifier);
+        return html(res, 200, oauthPage("Google account connected successfully."));
+      } catch (error) { return html(res, 502, oauthPage(`Google sign-in failed: ${String(error.message ?? error)}`)); }
+    }
+    if (url.pathname === "/account" && req.method === "GET") {
+      if (!googleClientID) return json(res, 200, { signedIn: false, configured: false });
+      try {
+        const channel = await youtubeAPI("channels?part=snippet&mine=true");
+        const item = channel?.items?.[0];
+        return json(res, 200, { signedIn: Boolean(item), configured: true, title: item?.snippet?.title ?? null, channelID: item?.id ?? null, thumbnailURL: item?.snippet?.thumbnails?.high?.url ?? item?.snippet?.thumbnails?.default?.url ?? null });
+      } catch (error) { return json(res, 401, { signedIn: false, configured: true, error: String(error.message ?? error) }); }
+    }
+    if (url.pathname === "/subscriptions" && req.method === "GET") {
+      try {
+        const result = await youtubeAPI("activities?part=snippet,contentDetails&home=true&maxResults=50");
+        if (!result) return json(res, 401, { error: "YouTube account is not connected" });
+        const videos = (result?.items ?? []).filter(item => item.contentDetails?.upload?.videoId).map(item => ({ id: item.contentDetails.upload.videoId, title: item.snippet?.title ?? "", channel: item.snippet?.channelTitle ?? "", thumbnailURL: item.snippet?.thumbnails?.high?.url ?? item.snippet?.thumbnails?.default?.url ?? null }));
+        return json(res, 200, { videos });
+      } catch (error) { return json(res, 401, { error: String(error.message ?? error) }); }
+    }
     if (url.pathname === "/pair" && req.method === "GET") {
       const page = pairPage();
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Content-Length": Buffer.byteLength(page) });

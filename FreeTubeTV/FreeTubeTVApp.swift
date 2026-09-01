@@ -10,6 +10,7 @@ struct FreeTubeTVApp: App {
             TVRootView()
                 .environment(model)
                 .environment(library)
+                .task { model.libraryStore = library }
                 .preferredColorScheme(.dark)
         }
     }

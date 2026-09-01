@@ -97,6 +97,7 @@ final class TVCatalogModel {
             return
         }
         isShowingSearchResults = true
+        libraryStore?.recordSearch(trimmed)
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -114,6 +115,8 @@ final class TVCatalogModel {
             errorMessage = TVCatalogError.requestFailed.localizedDescription
         }
     }
+
+    weak var libraryStore: TVLibraryStore?
 
     func resetToHome() {
         query = ""

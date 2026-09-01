@@ -6,15 +6,18 @@ import Observation
 final class TVLibraryStore {
     private static let favoritesKey = "tv.freetube.favorites"
     private static let historyKey = "tv.freetube.history"
+    private static let searchesKey = "tv.freetube.searches"
     private static let maxHistoryCount = 50
 
     private(set) var favorites: [TVVideo] = []
     private(set) var history: [TVVideo] = []
+    private(set) var recentSearches: [String] = []
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         favorites = load(Self.favoritesKey)
         history = load(Self.historyKey)
+        recentSearches = defaults.stringArray(forKey: Self.searchesKey) ?? []
     }
 
     func isFavorite(_ video: TVVideo) -> Bool {
@@ -42,6 +45,20 @@ final class TVLibraryStore {
     func clearHistory() {
         history.removeAll()
         defaults.removeObject(forKey: Self.historyKey)
+    }
+
+    func recordSearch(_ query: String) {
+        let value = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return }
+        recentSearches.removeAll { $0.caseInsensitiveCompare(value) == .orderedSame }
+        recentSearches.insert(value, at: 0)
+        if recentSearches.count > 10 { recentSearches.removeLast(recentSearches.count - 10) }
+        defaults.set(recentSearches, forKey: Self.searchesKey)
+    }
+
+    func clearSearches() {
+        recentSearches.removeAll()
+        defaults.removeObject(forKey: Self.searchesKey)
     }
 
     private let defaults: UserDefaults

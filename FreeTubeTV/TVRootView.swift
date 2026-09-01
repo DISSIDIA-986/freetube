@@ -58,6 +58,12 @@ struct TVRootView: View {
             } else if model.homeVideos.isEmpty {
                 ContentUnavailableView("Loading the home feed", systemImage: "play.rectangle", description: Text("FreeTube TV is fetching anonymous recommendations."))
             } else {
+                if !library.recentSearches.isEmpty {
+                    TVRecentSearches(searches: library.recentSearches) { query in
+                        model.query = query
+                        Task { await model.search() }
+                    }
+                }
                 TVVideoShelf(title: "Trending now", videos: model.homeVideos) { selectedVideo = $0 }
                 Text("Search YouTube for more videos").foregroundStyle(.secondary)
             }
@@ -121,6 +127,26 @@ private struct TVVideoShelf: View {
                     }
                 }
                 .padding(.vertical, 20)
+            }
+        }
+    }
+}
+
+private struct TVRecentSearches: View {
+    let searches: [String]
+    let onSelect: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Recent searches").font(.title2.bold())
+            ScrollView(.horizontal) {
+                HStack(spacing: 16) {
+                    ForEach(searches, id: \.self) { query in
+                        Button(query) { onSelect(query) }
+                            .buttonStyle(.bordered)
+                    }
+                }
+                .padding(.vertical, 8)
             }
         }
     }

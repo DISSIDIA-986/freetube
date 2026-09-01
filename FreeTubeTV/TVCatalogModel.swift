@@ -266,6 +266,9 @@ final class TVCatalogModel {
     }
 
     func loadCollection(_ collection: TVCollection) async throws -> [TVVideo] {
+        if let gatewayVideos = try? await loadCollectionFromGateway(collection), !gatewayVideos.isEmpty {
+            return gatewayVideos
+        }
         switch collection.kind {
         case .playlist:
             let playlistID = collection.id.hasPrefix("VL") ? collection.id : "VL" + collection.id
@@ -289,17 +292,50 @@ final class TVCatalogModel {
             )
             while response.channelContentContinuationStore[.videos] != nil,
                   (response.channelContentStore[.videos] as? ChannelInfosResponse.Videos)?.items.count ?? 0 < 200 {
-                let continuation = try await response.getChannelContentContinuationThrowing(
-                    ChannelInfosResponse.Videos.self,
-                    youtubeModel: youtube
-                )
-                response.mergeListableChannelContentContinuation(continuation)
+                do {
+                    let continuation = try await response.getChannelContentContinuationThrowing(
+                        ChannelInfosResponse.Videos.self,
+                        youtubeModel: youtube
+                    )
+                    response.mergeListableChannelContentContinuation(continuation)
+                } catch {
+                    // Keep the first page if a continuation expires or is rejected.
+                    print("FreeTubeTV channel pagination: keeping loaded videos after continuation failure: \(error.localizedDescription)")
+                    break
+                }
             }
             guard let videos = response.channelContentStore[.videos] as? ChannelInfosResponse.Videos else { return [] }
-            return videos.items.compactMap { result in
+            let channelVideos: [TVVideo] = videos.items.compactMap { result -> TVVideo? in
                 guard let video = result as? YTVideo else { return nil }
                 return makeVideo(from: video)
             }
+            return TVChannelVideoSorter.newestFirst(channelVideos)
+        }
+    }
+
+    private func loadCollectionFromGateway(_ collection: TVCollection) async throws -> [TVVideo] {
+        guard let base = gatewayBaseURL,
+              var components = URLComponents(url: base.appendingPathComponent("collection-videos"), resolvingAgainstBaseURL: false) else {
+            throw TVCatalogError.requestFailed
+        }
+        components.queryItems = [
+            URLQueryItem(name: "id", value: collection.id),
+            URLQueryItem(name: "kind", value: collection.kind.rawValue)
+        ]
+        let (data, response) = try await URLSession.shared.data(from: components.url!)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw TVCatalogError.requestFailed
+        }
+        let result = try JSONDecoder().decode(GatewayCollectionResponse.self, from: data)
+        return result.videos.map { video in
+            TVVideo(
+                id: video.id,
+                title: video.title,
+                channel: video.channel,
+                channelID: video.channelID,
+                thumbnailURL: video.thumbnailURL,
+                duration: ""
+            )
         }
     }
 
@@ -506,7 +542,8 @@ final class TVCatalogModel {
             channel: video.channel?.name ?? "YouTube",
             channelID: video.channel?.channelId,
             thumbnailURL: video.thumbnails.last?.url,
-            duration: video.timeLength ?? ""
+            duration: video.timeLength ?? "",
+            publishedRelative: video.timePosted
         )
     }
 }
@@ -537,6 +574,18 @@ private struct SubscriptionVideo: Decodable {
     let id: String
     let title: String
     let channel: String
+    let thumbnailURL: URL?
+}
+
+private struct GatewayCollectionResponse: Decodable {
+    let videos: [GatewayCollectionVideo]
+}
+
+private struct GatewayCollectionVideo: Decodable {
+    let id: String
+    let title: String
+    let channel: String
+    let channelID: String?
     let thumbnailURL: URL?
 }
 

@@ -213,6 +213,51 @@ const server = http.createServer(async (req, res) => {
         return json(res, 200, { playlists: (result.items ?? []).map(item => ({ id: item.id, title: item.snippet?.title ?? "", count: item.contentDetails?.itemCount ?? 0, thumbnailURL: item.snippet?.thumbnails?.high?.url ?? item.snippet?.thumbnails?.default?.url ?? null })) });
       } catch (error) { return json(res, 401, { error: String(error.message ?? error) }); }
     }
+    if (url.pathname === "/collection-videos" && req.method === "GET") {
+      try {
+        const id = url.searchParams.get("id");
+        const kind = url.searchParams.get("kind");
+        if (!id || !["channel", "playlist"].includes(kind)) return json(res, 400, { error: "invalid collection" });
+
+        let playlistID = id;
+        if (kind === "channel") {
+          const channels = await youtubeAPI(`channels?part=contentDetails&id=${encodeURIComponent(id)}`);
+          playlistID = channels?.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+          if (!playlistID) return json(res, 200, { videos: [] });
+        }
+
+        const videos = [];
+        let pageToken = "";
+        do {
+          const query = new URLSearchParams({ part: "snippet,contentDetails", playlistId: playlistID, maxResults: "50" });
+          if (pageToken) query.set("pageToken", pageToken);
+          const page = await youtubeAPI(`playlistItems?${query}`);
+          for (const item of page?.items ?? []) {
+            const videoID = item.contentDetails?.videoId;
+            if (!videoID || item.snippet?.title === "Deleted video" || item.snippet?.title === "Private video") continue;
+            videos.push({
+              id: videoID,
+              title: item.snippet?.title ?? "",
+              channel: item.snippet?.videoOwnerChannelTitle ?? item.snippet?.channelTitle ?? "YouTube",
+              channelID: item.snippet?.videoOwnerChannelId ?? item.snippet?.channelId ?? null,
+              thumbnailURL: item.snippet?.thumbnails?.high?.url ?? item.snippet?.thumbnails?.default?.url ?? null,
+              publishedAt: item.snippet?.publishedAt ?? null
+            });
+          }
+          pageToken = page?.nextPageToken ?? "";
+        } while (pageToken && videos.length < 200);
+
+        videos.sort((left, right) => {
+          const leftTime = Date.parse(left.publishedAt ?? "");
+          const rightTime = Date.parse(right.publishedAt ?? "");
+          if (Number.isNaN(leftTime) && Number.isNaN(rightTime)) return 0;
+          if (Number.isNaN(leftTime)) return 1;
+          if (Number.isNaN(rightTime)) return -1;
+          return rightTime - leftTime;
+        });
+        return json(res, 200, { videos });
+      } catch (error) { return json(res, 401, { error: String(error.message ?? error) }); }
+    }
     if (url.pathname === "/likes" && req.method === "GET") {
       try {
         const result = await youtubeAPI("videos?part=snippet,contentDetails&myRating=like&maxResults=50");

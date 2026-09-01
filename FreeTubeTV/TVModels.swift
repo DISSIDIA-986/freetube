@@ -7,14 +7,18 @@ struct TVVideo: Identifiable, Hashable, Codable, Sendable {
     let channelID: String?
     let thumbnailURL: URL?
     let duration: String
+    /// YouTube's localized relative publication label, for example "2 days ago" or "3天前".
+    /// Channel pages use this as a deterministic client-side ordering signal.
+    let publishedRelative: String?
 
-    init(id: String, title: String, channel: String, channelID: String? = nil, thumbnailURL: URL?, duration: String) {
+    init(id: String, title: String, channel: String, channelID: String? = nil, thumbnailURL: URL?, duration: String, publishedRelative: String? = nil) {
         self.id = id
         self.title = title
         self.channel = channel
         self.channelID = channelID
         self.thumbnailURL = thumbnailURL
         self.duration = duration
+        self.publishedRelative = publishedRelative
     }
 }
 

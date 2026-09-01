@@ -59,7 +59,42 @@ final class TVLibraryStoreTests: XCTestCase {
         XCTAssertEqual(store.history.map(\.id), ["remote", "local"])
     }
 
-    private func makeVideo(id: String) -> TVVideo {
-        TVVideo(id: id, title: "Title \(id)", channel: "Channel", thumbnailURL: nil, duration: "1:00")
+    func testChannelSorterPlacesNewestEnglishVideosFirst() {
+        let videos = [
+            makeVideo(id: "old", publishedRelative: "2 days ago"),
+            makeVideo(id: "new", publishedRelative: "3 hours ago"),
+            makeVideo(id: "middle", publishedRelative: "1 day ago")
+        ]
+
+        XCTAssertEqual(TVChannelVideoSorter.newestFirst(videos).map(\.id), ["new", "middle", "old"])
+    }
+
+    func testChannelSorterSupportsChineseAndKeepsUnknownItemsLast() {
+        let videos = [
+            makeVideo(id: "unknown", publishedRelative: nil),
+            makeVideo(id: "old", publishedRelative: "昨天"),
+            makeVideo(id: "new", publishedRelative: "刚刚"),
+            makeVideo(id: "also-unknown", publishedRelative: "premiere")
+        ]
+
+        XCTAssertEqual(TVChannelVideoSorter.newestFirst(videos).map(\.id), ["new", "old", "unknown", "also-unknown"])
+    }
+
+    func testRelativeAgeRejectsEmptyAndUnrecognizedLabels() {
+        XCTAssertNil(TVChannelVideoSorter.relativeAge(nil))
+        XCTAssertNil(TVChannelVideoSorter.relativeAge(""))
+        XCTAssertNil(TVChannelVideoSorter.relativeAge("premieres tomorrow"))
+        XCTAssertEqual(TVChannelVideoSorter.relativeAge("1 month ago"), 2_629_800)
+    }
+
+    func testVideoDecodingRemainsCompatibleWithOlderSavedData() throws {
+        let data = Data(#"{"id":"legacy","title":"Legacy","channel":"Channel","channelID":null,"thumbnailURL":null,"duration":"1:00"}"#.utf8)
+        let video = try JSONDecoder().decode(TVVideo.self, from: data)
+        XCTAssertEqual(video.id, "legacy")
+        XCTAssertNil(video.publishedRelative)
+    }
+
+    private func makeVideo(id: String, publishedRelative: String? = nil) -> TVVideo {
+        TVVideo(id: id, title: "Title \(id)", channel: "Channel", thumbnailURL: nil, duration: "1:00", publishedRelative: publishedRelative)
     }
 }

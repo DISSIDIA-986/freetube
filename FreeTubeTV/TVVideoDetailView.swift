@@ -2,6 +2,9 @@ import AVKit
 import SwiftUI
 
 struct TVVideoDetailView: View {
+    private static let resolutionDefaultsKey = "tv.freetube.playbackResolution"
+    private static let defaultResolution = 480
+
     @Environment(\.dismiss) private var dismiss
     @Environment(TVCatalogModel.self) private var model
     @Environment(TVLibraryStore.self) private var library
@@ -13,11 +16,17 @@ struct TVVideoDetailView: View {
     @State private var playbackMonitor: Task<Void, Never>?
     @State private var progressTask: Task<Void, Never>?
     @State private var localPlaybackURL: URL?
-    @State private var selectedResolution = 480
+    @State private var selectedResolution: Int
     @State private var channelCollection: TVCollection?
     @State private var channelVideo: TVVideo?
     @State private var isLookingUpChannel = false
     @State private var channelLookupFailed = false
+
+    init(video: TVVideo) {
+        self.video = video
+        let storedResolution = UserDefaults.standard.integer(forKey: Self.resolutionDefaultsKey)
+        _selectedResolution = State(initialValue: storedResolution == 0 ? Self.defaultResolution : storedResolution)
+    }
 
     var body: some View {
         ZStack {
@@ -25,7 +34,10 @@ struct TVVideoDetailView: View {
                 TVPlayerSurface(
                     player: player,
                     selectedResolution: selectedResolution,
-                    onResolutionSelected: { selectedResolution = $0 },
+                    onResolutionSelected: {
+                        selectedResolution = $0
+                        UserDefaults.standard.set($0, forKey: Self.resolutionDefaultsKey)
+                    },
                     onChannelSelected: openChannel
                 )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

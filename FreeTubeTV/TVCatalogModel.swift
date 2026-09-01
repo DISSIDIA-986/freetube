@@ -24,6 +24,7 @@ final class TVCatalogModel {
     private let youtube = YouTubeModel()
     private(set) var gatewayHost: String
     private let gatewayPort = 8787
+    private var gatewayToken: String?
 
     struct Pairing: Sendable {
         let code: String
@@ -33,6 +34,7 @@ final class TVCatalogModel {
     init() {
         let defaults = UserDefaults.standard
         gatewayHost = defaults.string(forKey: "tv.freetube.gatewayHost") ?? "192.168.1.79"
+        gatewayToken = defaults.string(forKey: "tv.freetube.gatewayToken")
         regionProfile = TVRegionProfile(rawValue: defaults.string(forKey: Self.regionDefaultsKey) ?? "") ?? .northAmerica
         youtube.selectedLocale = regionProfile.rawValue
     }
@@ -93,7 +95,12 @@ final class TVCatalogModel {
             let (data, response) = try await URLSession.shared.data(from: components.url!)
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return .failed }
             let result = try JSONDecoder().decode(PairingStatusResponse.self, from: data)
-            return result.status == "paired" ? .paired : .pending
+            if result.status == "paired", let token = result.token {
+                gatewayToken = token
+                UserDefaults.standard.set(token, forKey: "tv.freetube.gatewayToken")
+                return .paired
+            }
+            return result.status == "paired" ? .failed : .pending
         } catch {
             return .failed
         }
@@ -102,7 +109,7 @@ final class TVCatalogModel {
     func loadGatewayAccount() async -> Bool {
         guard let base = gatewayBaseURL else { return false }
         do {
-            let (data, response) = try await URLSession.shared.data(from: base.appendingPathComponent("account"))
+            let (data, response) = try await URLSession.shared.data(for: authorizedRequest(base.appendingPathComponent("account")))
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return false }
             let result = try JSONDecoder().decode(AccountResponse.self, from: data)
             guard result.signedIn, let title = result.title, let channelID = result.channelID else { account = nil; return false }
@@ -114,7 +121,7 @@ final class TVCatalogModel {
     func loadGatewaySubscriptions() async {
         guard let base = gatewayBaseURL else { return }
         do {
-            let (data, response) = try await URLSession.shared.data(from: base.appendingPathComponent("subscriptions"))
+            let (data, response) = try await URLSession.shared.data(for: authorizedRequest(base.appendingPathComponent("subscriptions")))
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
             let result = try JSONDecoder().decode(SubscriptionsResponse.self, from: data)
             subscriptionVideos = result.videos.map { TVVideo(id: $0.id, title: $0.title, channel: $0.channel, thumbnailURL: $0.thumbnailURL, duration: "") }
@@ -124,8 +131,8 @@ final class TVCatalogModel {
     func loadCloudLibrary() async {
         guard let base = gatewayBaseURL else { return }
         do {
-            async let likesRequest = URLSession.shared.data(from: base.appendingPathComponent("likes"))
-            async let playlistsRequest = URLSession.shared.data(from: base.appendingPathComponent("playlists"))
+            async let likesRequest = URLSession.shared.data(for: authorizedRequest(base.appendingPathComponent("likes")))
+            async let playlistsRequest = URLSession.shared.data(for: authorizedRequest(base.appendingPathComponent("playlists")))
             let (likesData, likesResponse) = try await likesRequest
             let (playlistData, playlistResponse) = try await playlistsRequest
             if (likesResponse as? HTTPURLResponse)?.statusCode == 200 {
@@ -142,7 +149,7 @@ final class TVCatalogModel {
     func syncHistoryToGateway() async {
         guard let base = gatewayBaseURL, let history = libraryStore?.history else { return }
         do {
-            let (remoteData, remoteResponse) = try await URLSession.shared.data(from: base.appendingPathComponent("sync/history"))
+            let (remoteData, remoteResponse) = try await URLSession.shared.data(for: authorizedRequest(base.appendingPathComponent("sync/history")))
             if (remoteResponse as? HTTPURLResponse)?.statusCode == 200 {
                 let remote = try JSONDecoder().decode(SyncedHistoryResponse.self, from: remoteData)
                 libraryStore?.mergeHistory(remote.videos)
@@ -150,6 +157,7 @@ final class TVCatalogModel {
             let mergedHistory = libraryStore?.history ?? history
             var request = URLRequest(url: base.appendingPathComponent("sync/history"))
             request.httpMethod = "POST"
+            addAuthorization(to: &request)
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try JSONEncoder().encode(["videos": mergedHistory])
             _ = try await URLSession.shared.data(for: request)
@@ -322,7 +330,7 @@ final class TVCatalogModel {
             URLQueryItem(name: "id", value: collection.id),
             URLQueryItem(name: "kind", value: collection.kind.rawValue)
         ]
-        let (data, response) = try await URLSession.shared.data(from: components.url!)
+        let (data, response) = try await URLSession.shared.data(for: authorizedRequest(components.url!))
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             throw TVCatalogError.requestFailed
         }
@@ -337,6 +345,16 @@ final class TVCatalogModel {
                 duration: ""
             )
         }
+    }
+
+    private func authorizedRequest(_ url: URL) -> URLRequest {
+        var request = URLRequest(url: url)
+        addAuthorization(to: &request)
+        return request
+    }
+
+    private func addAuthorization(to request: inout URLRequest) {
+        if let gatewayToken { request.setValue("Bearer \(gatewayToken)", forHTTPHeaderField: "Authorization") }
     }
 
     weak var libraryStore: TVLibraryStore?
@@ -557,6 +575,7 @@ private struct PairingResponse: Decodable {
 
 private struct PairingStatusResponse: Decodable {
     let status: String
+    let token: String?
 }
 
 private struct AccountResponse: Decodable {

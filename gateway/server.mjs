@@ -13,17 +13,22 @@ const jobs = new Map();
 const pairings = new Map();
 const oauthStates = new Map();
 const auth = { accessToken: null, refreshToken: null, expiresAt: 0 };
+const deviceTokens = new Set();
 const googleClientID = process.env.FREETUBE_GOOGLE_CLIENT_ID ?? "";
 const oauthRedirectURI = process.env.FREETUBE_GOOGLE_REDIRECT_URI ?? `http://127.0.0.1:${port}/oauth/callback`;
 const authFile = join(process.cwd(), ".gateway-auth.json");
 const historyFile = join(process.cwd(), ".gateway-history.json");
 try {
-  if (existsSync(authFile)) auth.refreshToken = JSON.parse(readFileSync(authFile, "utf8")).refreshToken ?? null;
+  if (existsSync(authFile)) {
+    const saved = JSON.parse(readFileSync(authFile, "utf8"));
+    auth.refreshToken = saved.refreshToken ?? null;
+    for (const token of saved.deviceTokens ?? []) if (typeof token === "string") deviceTokens.add(token);
+  }
 } catch (error) { console.error("[gateway] unable to read auth state", error.message); }
 
 function saveAuth() {
-  if (!auth.refreshToken) return;
-  writeFileSync(authFile, JSON.stringify({ refreshToken: auth.refreshToken }), { mode: 0o600 });
+  if (!auth.refreshToken && deviceTokens.size === 0) return;
+  writeFileSync(authFile, JSON.stringify({ refreshToken: auth.refreshToken, deviceTokens: [...deviceTokens] }), { mode: 0o600 });
   chmodSync(authFile, 0o600);
 }
 
@@ -70,6 +75,18 @@ function json(res, status, body) {
   const data = JSON.stringify(body);
   res.writeHead(status, { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(data) });
   res.end(data);
+}
+
+function hasDeviceAccess(req) {
+  if (deviceTokens.size === 0) return true;
+  const header = req.headers.authorization ?? "";
+  return header.startsWith("Bearer ") && deviceTokens.has(header.slice("Bearer ".length));
+}
+
+function requireDeviceAccess(req, res) {
+  if (hasDeviceAccess(req)) return true;
+  json(res, 401, { error: "FreeTube TV pairing required" });
+  return false;
 }
 
 function pairingCode() {
@@ -186,6 +203,7 @@ const server = http.createServer(async (req, res) => {
       } catch (error) { return html(res, 502, oauthPage(`Google sign-in failed: ${String(error.message ?? error)}`)); }
     }
     if (url.pathname === "/account" && req.method === "GET") {
+      if (!requireDeviceAccess(req, res)) return;
       if (!googleClientID) return json(res, 200, { signedIn: false, configured: false });
       try {
         const channel = await youtubeAPI("channels?part=snippet&mine=true");
@@ -194,6 +212,7 @@ const server = http.createServer(async (req, res) => {
       } catch (error) { return json(res, 401, { signedIn: false, configured: true, error: String(error.message ?? error) }); }
     }
     if (url.pathname === "/subscriptions" && req.method === "GET") {
+      if (!requireDeviceAccess(req, res)) return;
       try {
         const subscriptions = await youtubeAPI("subscriptions?part=snippet,contentDetails&mine=true&maxResults=50");
         if (!subscriptions) return json(res, 401, { error: "YouTube account is not connected" });
@@ -207,6 +226,7 @@ const server = http.createServer(async (req, res) => {
       } catch (error) { return json(res, 401, { error: String(error.message ?? error) }); }
     }
     if (url.pathname === "/playlists" && req.method === "GET") {
+      if (!requireDeviceAccess(req, res)) return;
       try {
         const result = await youtubeAPI("playlists?part=snippet,contentDetails&mine=true&maxResults=50");
         if (!result) return json(res, 401, { error: "YouTube account is not connected" });
@@ -214,6 +234,7 @@ const server = http.createServer(async (req, res) => {
       } catch (error) { return json(res, 401, { error: String(error.message ?? error) }); }
     }
     if (url.pathname === "/collection-videos" && req.method === "GET") {
+      if (!requireDeviceAccess(req, res)) return;
       try {
         const id = url.searchParams.get("id");
         const kind = url.searchParams.get("kind");
@@ -259,14 +280,19 @@ const server = http.createServer(async (req, res) => {
       } catch (error) { return json(res, 401, { error: String(error.message ?? error) }); }
     }
     if (url.pathname === "/likes" && req.method === "GET") {
+      if (!requireDeviceAccess(req, res)) return;
       try {
         const result = await youtubeAPI("videos?part=snippet,contentDetails&myRating=like&maxResults=50");
         if (!result) return json(res, 401, { error: "YouTube account is not connected" });
         return json(res, 200, { videos: (result.items ?? []).map(item => ({ id: item.id, title: item.snippet?.title ?? "", channel: item.snippet?.channelTitle ?? "", thumbnailURL: item.snippet?.thumbnails?.high?.url ?? item.snippet?.thumbnails?.default?.url ?? null })) });
       } catch (error) { return json(res, 401, { error: String(error.message ?? error) }); }
     }
-    if (url.pathname === "/sync/history" && req.method === "GET") return json(res, 200, { videos: readHistory() });
+    if (url.pathname === "/sync/history" && req.method === "GET") {
+      if (!requireDeviceAccess(req, res)) return;
+      return json(res, 200, { videos: readHistory() });
+    }
     if (url.pathname === "/sync/history" && req.method === "POST") {
+      if (!requireDeviceAccess(req, res)) return;
       try {
         const incoming = await requestBody(req);
         const merged = [...incoming.videos ?? [], ...readHistory()].filter((video, index, all) => video?.id && all.findIndex(item => item.id === video.id) === index).slice(0, 100);
@@ -290,13 +316,16 @@ const server = http.createServer(async (req, res) => {
       const code = url.searchParams.get("code");
       const pairing = code && pairings.get(code);
       if (!pairing) return json(res, 404, { error: "pairing code expired or not found" });
-      return json(res, 200, { status: pairing.status, expiresAt: pairing.expiresAt });
+      return json(res, 200, { status: pairing.status, expiresAt: pairing.expiresAt, token: pairing.token ?? null });
     }
     if (url.pathname === "/pair/confirm" && req.method === "POST") {
       const code = url.searchParams.get("code");
       const pairing = code && pairings.get(code);
       if (!pairing) return json(res, 404, { error: "pairing code expired or not found" });
       pairing.status = "paired";
+      pairing.token = randomBytes(32).toString("base64url");
+      deviceTokens.add(pairing.token);
+      saveAuth();
       return json(res, 200, { status: pairing.status });
     }
     if (url.pathname === "/resolve") {

@@ -18,8 +18,16 @@ struct TVVideoDetailView: View {
     @State private var channelVideo: TVVideo?
     @State private var isLookingUpChannel = false
     @State private var channelLookupFailed = false
+    @State private var isMuted = false
+    @State private var hasCaptions = false
+    @State private var captionsEnabled = false
+    @FocusState private var focusedControl: PlayerControl?
 
     private let resolutionOptions = [360, 480, 720, 1080, 1440, 2160]
+
+    private enum PlayerControl: Hashable {
+        case resolution, captions, mute, channel
+    }
 
     var body: some View {
         ZStack {
@@ -47,39 +55,64 @@ struct TVVideoDetailView: View {
                     } label: {
                         Label("Back", systemImage: "chevron.left")
                     }
-                    .buttonStyle(.borderedProminent)
-                    Menu {
-                        ForEach(resolutionOptions, id: \.self) { resolution in
-                            Button("\(resolution)p") { selectedResolution = resolution }
-                        }
-                    } label: {
-                        Label("Resolution: \(selectedResolution)p", systemImage: "4k.tv")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    Button {
-                        isLookingUpChannel = true
-                        channelLookupFailed = false
-                        Task {
-                            channelCollection = await model.channelCollection(for: video)
-                            channelLookupFailed = channelCollection == nil
-                            isLookingUpChannel = false
-                        }
-                    } label: {
-                        if isLookingUpChannel {
-                            Label("Finding channel…", systemImage: "person.2")
-                        } else if channelLookupFailed {
-                            Label("Channel unavailable", systemImage: "person.crop.circle.badge.exclamationmark")
-                        } else {
-                            Label("View channel", systemImage: "person.2")
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(isLookingUpChannel || channelLookupFailed)
                     Spacer()
                 }
                 .padding(.top, 36)
                 .padding(.leading, 48)
                 Spacer()
+
+                if player != nil {
+                    HStack(spacing: 12) {
+                        Menu {
+                            ForEach(resolutionOptions, id: \.self) { resolution in
+                                Button("\(resolution)p") { selectedResolution = resolution }
+                            }
+                        } label: {
+                            Label("\(selectedResolution)p", systemImage: "4k.tv")
+                        }
+                        .focused($focusedControl, equals: .resolution)
+
+                        Button {
+                            toggleCaptions()
+                        } label: {
+                            Label(captionsEnabled ? "CC On" : "CC Off", systemImage: captionsEnabled ? "captions.bubble.fill" : "captions.bubble")
+                        }
+                        .focused($focusedControl, equals: .captions)
+                        .disabled(!hasCaptions)
+
+                        Button {
+                            isMuted.toggle()
+                            player?.isMuted = isMuted
+                        } label: {
+                            Label(isMuted ? "Muted" : "Sound", systemImage: isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                        }
+                        .focused($focusedControl, equals: .mute)
+
+                        Button {
+                            isLookingUpChannel = true
+                            channelLookupFailed = false
+                            Task {
+                                channelCollection = await model.channelCollection(for: video)
+                                channelLookupFailed = channelCollection == nil
+                                isLookingUpChannel = false
+                            }
+                        } label: {
+                            Label(isLookingUpChannel ? "Finding…" : "Channel", systemImage: "person.2")
+                        }
+                        .focused($focusedControl, equals: .channel)
+                        .disabled(isLookingUpChannel || channelLookupFailed)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .focusSection()
+                    .padding(.horizontal, 36)
+                    .padding(.vertical, 18)
+                    .background(.black.opacity(0.72), in: Capsule())
+                    .padding(.bottom, 42)
+                    .padding(.trailing, 48)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .zIndex(10)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -181,6 +214,11 @@ struct TVVideoDetailView: View {
         }
         .task(id: playerItem) {
             guard let item = playerItem, let player else { return }
+            if let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .legible) {
+                hasCaptions = !group.options.isEmpty
+            } else {
+                hasCaptions = false
+            }
             playbackMonitor?.cancel()
             playbackMonitor = Task { @MainActor in
                 for _ in 0..<30 {
@@ -231,6 +269,17 @@ struct TVVideoDetailView: View {
             return "HTTP \(event.errorStatusCode): \(event.errorComment ?? "The stream could not be loaded.")"
         }
         return "The stream did not become playable on Apple TV."
+    }
+
+    private func toggleCaptions() {
+        guard let item = playerItem,
+              let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .legible) else { return }
+        if captionsEnabled {
+            item.select(nil, in: group)
+        } else {
+            item.select(group.defaultOption ?? group.options.first, in: group)
+        }
+        captionsEnabled.toggle()
     }
 
     private func diagnosticDescription(for error: Error) -> String {

@@ -9,6 +9,7 @@ const host = process.env.FREETUBE_GATEWAY_HOST ?? "0.0.0.0";
 const cacheDir = join(process.cwd(), "gateway-cache");
 mkdirSync(cacheDir, { recursive: true });
 const jobs = new Map();
+const pairings = new Map();
 
 function videoPath(id) { return join(cacheDir, `${id}.mp4`); }
 
@@ -45,6 +46,28 @@ function json(res, status, body) {
   res.end(data);
 }
 
+function pairingCode() {
+  let code;
+  do code = String(Math.floor(100000 + Math.random() * 900000));
+  while (pairings.has(code));
+  return code;
+}
+
+function prunePairings() {
+  const now = Date.now();
+  for (const [code, pairing] of pairings) {
+    if (pairing.expiresAt < now) pairings.delete(code);
+  }
+}
+
+function pairPage() {
+  return `<!doctype html><meta name="viewport" content="width=device-width"><title>FreeTube TV pairing</title>
+  <style>body{font:20px system-ui;max-width:560px;margin:48px auto;padding:0 24px;background:#111;color:#eee}input,button{font:inherit;padding:12px;margin-top:12px}input{width:10em}button{cursor:pointer}#status{margin-top:20px;color:#9f9}</style>
+  <h1>Pair FreeTube TV</h1><p>On Apple TV, open Settings → Pair with Mac and enter the six-digit code below.</p>
+  <form><input id="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="123456" required><button>Pair</button></form><div id="status"></div>
+  <script>document.querySelector('form').onsubmit=async e=>{e.preventDefault();let code=document.querySelector('#code').value;let r=await fetch('/pair/confirm?code='+encodeURIComponent(code),{method:'POST'});let j=await r.json();document.querySelector('#status').textContent=r.ok?'Paired successfully. Return to Apple TV.':(j.error||'Pairing failed');}</script>`;
+}
+
 function serveFile(req, res, file) {
   const size = statSync(file).size;
   const range = req.headers.range?.match(/bytes=(\d+)-(\d*)/);
@@ -69,6 +92,31 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host ?? "localhost"}`);
     if (url.pathname === "/healthz") return json(res, 200, { status: "ok" });
+    prunePairings();
+    if (url.pathname === "/pair" && req.method === "GET") {
+      const page = pairPage();
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Content-Length": Buffer.byteLength(page) });
+      return res.end(page);
+    }
+    if (url.pathname === "/pair/start" && req.method === "POST") {
+      const code = pairingCode();
+      const expiresAt = Date.now() + 5 * 60 * 1000;
+      pairings.set(code, { expiresAt, status: "pending" });
+      return json(res, 200, { code, expiresAt });
+    }
+    if (url.pathname === "/pair/status" && req.method === "GET") {
+      const code = url.searchParams.get("code");
+      const pairing = code && pairings.get(code);
+      if (!pairing) return json(res, 404, { error: "pairing code expired or not found" });
+      return json(res, 200, { status: pairing.status, expiresAt: pairing.expiresAt });
+    }
+    if (url.pathname === "/pair/confirm" && req.method === "POST") {
+      const code = url.searchParams.get("code");
+      const pairing = code && pairings.get(code);
+      if (!pairing) return json(res, 404, { error: "pairing code expired or not found" });
+      pairing.status = "paired";
+      return json(res, 200, { status: pairing.status });
+    }
     if (url.pathname === "/resolve") {
       const id = url.searchParams.get("id");
       if (!id || !/^[A-Za-z0-9_-]{11}$/.test(id)) return json(res, 400, { error: "invalid video id" });

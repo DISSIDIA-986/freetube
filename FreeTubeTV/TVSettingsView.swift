@@ -6,6 +6,7 @@ struct TVSettingsView: View {
     @Environment(TVLibraryStore.self) private var library
     @State private var gatewayHost = ""
     @State private var gatewayStatus: GatewayStatus = .unknown
+    @State private var showingPairing = false
 
     private enum GatewayStatus { case unknown, checking, online, offline }
 
@@ -26,6 +27,7 @@ struct TVSettingsView: View {
                 Text("The Mac gateway downloads and merges Apple TV-compatible H.264/AAC video on your home network.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                Button("Pair FreeTube TV with this Mac") { showingPairing = true }
             }
             Section("Recommendations") {
                 Picker("Region and language", selection: Binding(
@@ -51,7 +53,7 @@ struct TVSettingsView: View {
             }
             Section("About") {
                 LabeledContent("App", value: "FreeTube TV")
-                Text("Anonymous browsing and local library are available without signing in. Account, comments, subscriptions, and cloud playlists are not yet enabled on tvOS.")
+                Text("Anonymous browsing and local library are available without signing in. Official YouTube TV pairing is separate; account subscriptions require a future YouTube OAuth setup on the Mac gateway.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -64,6 +66,7 @@ struct TVSettingsView: View {
         .navigationTitle("Settings")
         .onAppear { gatewayHost = model.gatewayHost }
         .onExitCommand(perform: onReturnHome)
+        .sheet(isPresented: $showingPairing) { TVPairingView() }
     }
 
     private var statusColor: Color {

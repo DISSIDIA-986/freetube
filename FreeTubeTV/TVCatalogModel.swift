@@ -19,6 +19,11 @@ final class TVCatalogModel {
     private(set) var gatewayHost: String
     private let gatewayPort = 8787
 
+    struct Pairing: Sendable {
+        let code: String
+        let expiresAt: Date
+    }
+
     init() {
         let defaults = UserDefaults.standard
         gatewayHost = defaults.string(forKey: "tv.freetube.gatewayHost") ?? "192.168.1.79"
@@ -57,6 +62,34 @@ final class TVCatalogModel {
             return (response as? HTTPURLResponse)?.statusCode == 200
         } catch {
             return false
+        }
+    }
+
+    func startGatewayPairing() async throws -> Pairing {
+        guard let base = gatewayBaseURL else { throw TVCatalogError.requestFailed }
+        var request = URLRequest(url: base.appendingPathComponent("pair/start"))
+        request.httpMethod = "POST"
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw TVCatalogError.requestFailed
+        }
+        let result = try JSONDecoder().decode(PairingResponse.self, from: data)
+        return Pairing(code: result.code, expiresAt: Date(timeIntervalSince1970: result.expiresAt / 1000))
+    }
+
+    func gatewayPairingStatus(code: String) async -> PairingStatus {
+        guard let base = gatewayBaseURL,
+              var components = URLComponents(url: base.appendingPathComponent("pair/status"), resolvingAgainstBaseURL: false) else {
+            return .failed
+        }
+        components.queryItems = [URLQueryItem(name: "code", value: code)]
+        do {
+            let (data, response) = try await URLSession.shared.data(from: components.url!)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return .failed }
+            let result = try JSONDecoder().decode(PairingStatusResponse.self, from: data)
+            return result.status == "paired" ? .paired : .pending
+        } catch {
+            return .failed
         }
     }
 
@@ -310,4 +343,15 @@ final class TVCatalogModel {
             duration: video.timeLength ?? ""
         )
     }
+}
+
+enum PairingStatus: Sendable { case pending, paired, failed }
+
+private struct PairingResponse: Decodable {
+    let code: String
+    let expiresAt: Double
+}
+
+private struct PairingStatusResponse: Decodable {
+    let status: String
 }

@@ -14,6 +14,7 @@
 		733733FAE032F7A40B5D8808 /* TVLibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAAD6207F5CCEC74A5AF85D4 /* TVLibraryStoreTests.swift */; };
 		76DBB0C2BD3BB4F7D3CF34E5 /* TVRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA7346D696601E425A37FE7 /* TVRootView.swift */; };
 		7850B9D313F83619BDBF4C00 /* TVCatalogModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9904E75683EEF6F421126F37 /* TVCatalogModel.swift */; };
+		A34D16000AA6653F02797129 /* TVPlaybackDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 351572DFF9D5864BF47DFF72 /* TVPlaybackDiagnostics.swift */; };
 		A957860A3F7DB2848426E354 /* TVSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2CB88C220535CAD3E178AD /* TVSettingsView.swift */; };
 		B91E3157298B9EEA14A1A1A0 /* TVPlayerSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90216709D07A5340FE2BFA25 /* TVPlayerSurface.swift */; };
 		BA96D284CF99BAD877ADBCBA /* YouTubeKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1C32D16C8122F01D4F54921A /* YouTubeKit */; };
@@ -36,6 +37,7 @@
 /* Begin PBXFileReference section */
 		0915BF0AE6C90F9E171C8FF8 /* TVHLSResourceLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVHLSResourceLoader.swift; sourceTree = "<group>"; };
 		15012186D3ABCCBC47B7A373 /* FreeTubeTVTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FreeTubeTVTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		351572DFF9D5864BF47DFF72 /* TVPlaybackDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVPlaybackDiagnostics.swift; sourceTree = "<group>"; };
 		3DA7346D696601E425A37FE7 /* TVRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVRootView.swift; sourceTree = "<group>"; };
 		4E3816F52C7F67724EEA4D7D /* TVLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVLibraryStore.swift; sourceTree = "<group>"; };
 		5795910477D4F1B96A225FE2 /* TVChannelVideoSorter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVChannelVideoSorter.swift; sourceTree = "<group>"; };
@@ -94,6 +96,7 @@
 				4E3816F52C7F67724EEA4D7D /* TVLibraryStore.swift */,
 				DED442CD3E355E27269020EE /* TVModels.swift */,
 				CB5DF63D4609AF1BB315A1EB /* TVPairingView.swift */,
+				351572DFF9D5864BF47DFF72 /* TVPlaybackDiagnostics.swift */,
 				90216709D07A5340FE2BFA25 /* TVPlayerSurface.swift */,
 				3DA7346D696601E425A37FE7 /* TVRootView.swift */,
 				DA2CB88C220535CAD3E178AD /* TVSettingsView.swift */,
@@ -212,6 +215,7 @@
 				E419149E77413CAAB07296C2 /* TVLibraryStore.swift in Sources */,
 				D8CE2E09BECBD330F49535A3 /* TVModels.swift in Sources */,
 				4F87ACF8DCE6A216C6EBD497 /* TVPairingView.swift in Sources */,
+				A34D16000AA6653F02797129 /* TVPlaybackDiagnostics.swift in Sources */,
 				B91E3157298B9EEA14A1A1A0 /* TVPlayerSurface.swift in Sources */,
 				76DBB0C2BD3BB4F7D3CF34E5 /* TVRootView.swift in Sources */,
 				A957860A3F7DB2848426E354 /* TVSettingsView.swift in Sources */,

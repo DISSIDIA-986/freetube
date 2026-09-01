@@ -4,6 +4,7 @@ struct TVSettingsView: View {
     let onReturnHome: () -> Void
     @Environment(TVCatalogModel.self) private var model
     @Environment(TVLibraryStore.self) private var library
+    @Environment(TVPlaybackDiagnostics.self) private var diagnostics
     @State private var gatewayHost = ""
     @State private var gatewayStatus: GatewayStatus = .unknown
     @State private var showingPairing = false
@@ -60,6 +61,14 @@ struct TVSettingsView: View {
                 LabeledContent("Watch history", value: "\(library.history.count)")
                 Button("Clear watch history", role: .destructive) { library.clearHistory() }
                     .disabled(library.history.isEmpty)
+            }
+            Section("Playback diagnostics") {
+                LabeledContent("Recorded attempts", value: "\(diagnostics.incidents.count)")
+                Button("Clear playback diagnostics", role: .destructive) { diagnostics.clear() }
+                    .disabled(diagnostics.incidents.isEmpty)
+                Text("Only video IDs, selected resolution, success/failure, and a shortened error are stored locally.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
             Section("About") {
                 LabeledContent("App", value: "FreeTube TV")

@@ -94,6 +94,18 @@ final class TVLibraryStoreTests: XCTestCase {
         XCTAssertNil(video.publishedRelative)
     }
 
+    func testPlaybackDiagnosticsAreBoundedAndPersistedWithoutSensitiveURLs() {
+        let suite = UserDefaults(suiteName: "TVPlaybackDiagnosticsTests-\(UUID().uuidString)")!
+        let diagnostics = TVPlaybackDiagnostics(defaults: suite)
+        for index in 0..<55 {
+            diagnostics.record(videoID: "video-\(index)", resolution: 480, succeeded: false, error: "https://secret.example/\(index) \(String(repeating: "x", count: 400))")
+        }
+
+        XCTAssertEqual(diagnostics.incidents.count, 50)
+        XCTAssertEqual(TVPlaybackDiagnostics(defaults: suite).incidents.count, 50)
+        XCTAssertLessThanOrEqual(diagnostics.incidents.first?.error?.count ?? 0, 300)
+    }
+
     private func makeVideo(id: String, publishedRelative: String? = nil) -> TVVideo {
         TVVideo(id: id, title: "Title \(id)", channel: "Channel", thumbnailURL: nil, duration: "1:00", publishedRelative: publishedRelative)
     }

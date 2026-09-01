@@ -8,6 +8,7 @@ struct TVVideoDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(TVCatalogModel.self) private var model
     @Environment(TVLibraryStore.self) private var library
+    @Environment(TVPlaybackDiagnostics.self) private var diagnostics
     let video: TVVideo
     @State private var player: AVPlayer?
     @State private var playerItem: AVPlayerItem?
@@ -21,6 +22,7 @@ struct TVVideoDetailView: View {
     @State private var channelVideo: TVVideo?
     @State private var isLookingUpChannel = false
     @State private var channelLookupFailed = false
+    @State private var playbackAttempt = 0
 
     init(video: TVVideo) {
         self.video = video
@@ -43,7 +45,11 @@ struct TVVideoDetailView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .ignoresSafeArea()
             } else if let message {
-                ContentUnavailableView("Playback unavailable", systemImage: "play.slash", description: Text(message))
+                VStack(spacing: 24) {
+                    ContentUnavailableView("Playback unavailable", systemImage: "play.slash", description: Text(message))
+                    Button("Retry") { playbackAttempt += 1 }
+                        .buttonStyle(.borderedProminent)
+                }
             } else {
                 VStack(spacing: 20) {
                     ProgressView()
@@ -81,7 +87,7 @@ struct TVVideoDetailView: View {
         .fullScreenCover(item: $channelVideo) { selected in
             TVVideoDetailView(video: selected)
         }
-        .task(id: selectedResolution) {
+        .task(id: "\(selectedResolution)-\(playbackAttempt)") {
             player?.pause()
             player = nil
             playerItem = nil
@@ -151,8 +157,12 @@ struct TVVideoDetailView: View {
                     await player?.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
                 }
                 player?.play()
+                diagnostics.record(videoID: video.id, resolution: selectedResolution, succeeded: true)
+            } catch is CancellationError {
+                return
             } catch {
                 message = diagnosticDescription(for: error)
+                diagnostics.record(videoID: video.id, resolution: selectedResolution, succeeded: false, error: message)
             }
         }
         .onDisappear {

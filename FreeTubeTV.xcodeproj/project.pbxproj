@@ -1,0 +1,353 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		25CB87758FC755D345BB82BC /* FreeTubeTVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9ED407FEBB2A0DEDBCB72CF /* FreeTubeTVApp.swift */; };
+		5AE8ABE5BE3DAF6BCB93D0E9 /* TVVideoDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6EC86BF1513A267F3181611 /* TVVideoDetailView.swift */; };
+		76DBB0C2BD3BB4F7D3CF34E5 /* TVRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA7346D696601E425A37FE7 /* TVRootView.swift */; };
+		7850B9D313F83619BDBF4C00 /* TVCatalogModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9904E75683EEF6F421126F37 /* TVCatalogModel.swift */; };
+		BA96D284CF99BAD877ADBCBA /* YouTubeKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1C32D16C8122F01D4F54921A /* YouTubeKit */; };
+		D8CE2E09BECBD330F49535A3 /* TVModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = DED442CD3E355E27269020EE /* TVModels.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		3DA7346D696601E425A37FE7 /* TVRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVRootView.swift; sourceTree = "<group>"; };
+		8BD52D5DA652AFD4F461BFB3 /* FreeTubeTV.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FreeTubeTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9904E75683EEF6F421126F37 /* TVCatalogModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVCatalogModel.swift; sourceTree = "<group>"; };
+		B6EC86BF1513A267F3181611 /* TVVideoDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVVideoDetailView.swift; sourceTree = "<group>"; };
+		DED442CD3E355E27269020EE /* TVModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TVModels.swift; sourceTree = "<group>"; };
+		E9ED407FEBB2A0DEDBCB72CF /* FreeTubeTVApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeTubeTVApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CA2EDBF53EA8CE80084E6616 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BA96D284CF99BAD877ADBCBA /* YouTubeKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1AA4276A38524397A312F048 = {
+			isa = PBXGroup;
+			children = (
+				BCE34EECEB5A5DB6AB142F29 /* FreeTubeTV */,
+				BA0FD2714DA439093DF710DB /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		BA0FD2714DA439093DF710DB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8BD52D5DA652AFD4F461BFB3 /* FreeTubeTV.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		BCE34EECEB5A5DB6AB142F29 /* FreeTubeTV */ = {
+			isa = PBXGroup;
+			children = (
+				E9ED407FEBB2A0DEDBCB72CF /* FreeTubeTVApp.swift */,
+				9904E75683EEF6F421126F37 /* TVCatalogModel.swift */,
+				DED442CD3E355E27269020EE /* TVModels.swift */,
+				3DA7346D696601E425A37FE7 /* TVRootView.swift */,
+				B6EC86BF1513A267F3181611 /* TVVideoDetailView.swift */,
+			);
+			path = FreeTubeTV;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C3DBFF9F8F8D6313975FB6F3 /* FreeTubeTV */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DF1397454255590272BFD246 /* Build configuration list for PBXNativeTarget "FreeTubeTV" */;
+			buildPhases = (
+				F9C00F5759205613095EA3F2 /* Sources */,
+				CA2EDBF53EA8CE80084E6616 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FreeTubeTV;
+			packageProductDependencies = (
+				1C32D16C8122F01D4F54921A /* YouTubeKit */,
+			);
+			productName = FreeTubeTV;
+			productReference = 8BD52D5DA652AFD4F461BFB3 /* FreeTubeTV.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		30EC9B1485661D04B93DAD17 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					C3DBFF9F8F8D6313975FB6F3 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 1AEECA7699F46A6EDB12C3C5 /* Build configuration list for PBXProject "FreeTubeTV" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 1AA4276A38524397A312F048;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				60329ED41265CAE2849F977D /* XCRemoteSwiftPackageReference "YouTubeKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = BA0FD2714DA439093DF710DB /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C3DBFF9F8F8D6313975FB6F3 /* FreeTubeTV */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F9C00F5759205613095EA3F2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				25CB87758FC755D345BB82BC /* FreeTubeTVApp.swift in Sources */,
+				7850B9D313F83619BDBF4C00 /* TVCatalogModel.swift in Sources */,
+				D8CE2E09BECBD330F49535A3 /* TVModels.swift in Sources */,
+				76DBB0C2BD3BB4F7D3CF34E5 /* TVRootView.swift in Sources */,
+				5AE8ABE5BE3DAF6BCB93D0E9 /* TVVideoDetailView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		B2EE77B69C514B5F05078C3D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
+			};
+			name = Release;
+		};
+		D070E883D3B42BCF073CAAA3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "FreeTube TV";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "FreeTube TV uses your network to load video content.";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.neoniu.FreeTubeTV;
+				PRODUCT_NAME = FreeTubeTV;
+				SDKROOT = appletvos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Debug;
+		};
+		D5F8E096FD60311285871B03 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "FreeTube TV";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "FreeTube TV uses your network to load video content.";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.neoniu.FreeTubeTV;
+				PRODUCT_NAME = FreeTubeTV;
+				SDKROOT = appletvos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Release;
+		};
+		EBA07276CF6088D849DD6187 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1AEECA7699F46A6EDB12C3C5 /* Build configuration list for PBXProject "FreeTubeTV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EBA07276CF6088D849DD6187 /* Debug */,
+				B2EE77B69C514B5F05078C3D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DF1397454255590272BFD246 /* Build configuration list for PBXNativeTarget "FreeTubeTV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D070E883D3B42BCF073CAAA3 /* Debug */,
+				D5F8E096FD60311285871B03 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		60329ED41265CAE2849F977D /* XCRemoteSwiftPackageReference "YouTubeKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/b5i/YouTubeKit";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1C32D16C8122F01D4F54921A /* YouTubeKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 60329ED41265CAE2849F977D /* XCRemoteSwiftPackageReference "YouTubeKit" */;
+			productName = YouTubeKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 30EC9B1485661D04B93DAD17 /* Project object */;
+}

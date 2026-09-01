@@ -1,5 +1,15 @@
 # FreeTube
 
+## Apple TV 4K (tvOS)
+
+The repository includes a separate `FreeTubeTV.xcodeproj` for the tvOS MVP. It keeps the existing
+iOS app target unchanged and provides anonymous search, video cards, video details, and native
+`VideoPlayer` playback with Siri Remote navigation.
+
+Open `FreeTubeTV.xcodeproj` in Xcode, select the `FreeTubeTV` scheme, choose an Apple TV simulator
+or a connected Apple TV device, set your Apple Development team, and run. The tvOS target uses
+Bundle ID `com.neoniu.FreeTubeTV` and the YouTubeKit package already used by the iOS app.
+
 A native SwiftUI YouTube client for iOS. Cookie-based auth, AVPlayer playback, offline downloads, no Google API key.
 
 For personal use, sideload, or TestFlight only — **not** for public App Store submission.

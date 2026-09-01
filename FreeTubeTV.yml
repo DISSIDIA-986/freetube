@@ -1,0 +1,33 @@
+name: FreeTubeTV
+options:
+  bundleIdPrefix: com.neoniu
+  deploymentTarget:
+    tvOS: "17.0"
+  createIntermediateGroups: true
+packages:
+  YouTubeKit:
+    url: https://github.com/b5i/YouTubeKit
+    branch: main
+targets:
+  FreeTubeTV:
+    type: application
+    platform: tvOS
+    sources:
+      - path: FreeTubeTV
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.neoniu.FreeTubeTV
+        PRODUCT_NAME: FreeTubeTV
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: 5.0
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        SWIFT_APPROACHABLE_CONCURRENCY: YES
+        INFOPLIST_KEY_CFBundleDisplayName: FreeTube TV
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: FreeTube TV uses your network to load video content.
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: Apple Development
+        TARGETED_DEVICE_FAMILY: 3
+    dependencies:
+      - package: YouTubeKit
+        product: YouTubeKit

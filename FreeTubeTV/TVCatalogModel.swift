@@ -6,11 +6,38 @@ import YouTubeKit
 @Observable
 final class TVCatalogModel {
     var query = ""
+    private(set) var homeVideos: [TVVideo] = []
     private(set) var videos: [TVVideo] = []
     private(set) var isLoading = false
+    private(set) var isShowingSearchResults = false
     var errorMessage: String?
 
     private let youtube = YouTubeModel()
+
+    func loadHome() async {
+        guard homeVideos.isEmpty else { return }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            let response = try await HomeScreenResponse.sendThrowingRequest(
+                youtubeModel: youtube,
+                data: [:]
+            )
+            let results = response.results.map(makeVideo(from:))
+            if !results.isEmpty {
+                homeVideos = results
+                return
+            }
+            try await loadDiscoveryFallback()
+        } catch {
+            do {
+                try await loadDiscoveryFallback()
+            } catch {
+                errorMessage = TVCatalogError.requestFailed.localizedDescription
+            }
+        }
+    }
 
     func search() async {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -18,6 +45,7 @@ final class TVCatalogModel {
             errorMessage = TVCatalogError.emptyQuery.localizedDescription
             return
         }
+        isShowingSearchResults = true
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -28,18 +56,19 @@ final class TVCatalogModel {
             )
             videos = response.results.compactMap { result in
                 guard let video = result as? YTVideo else { return nil }
-                return TVVideo(
-                    id: video.videoId,
-                    title: video.title ?? "Untitled video",
-                    channel: video.channel?.name ?? "YouTube",
-                    thumbnailURL: video.thumbnails.last?.url,
-                    duration: video.timeLength ?? ""
-                )
+                return makeVideo(from: video)
             }
             if videos.isEmpty { errorMessage = "No videos found." }
         } catch {
             errorMessage = TVCatalogError.requestFailed.localizedDescription
         }
+    }
+
+    func resetToHome() {
+        query = ""
+        videos = []
+        isShowingSearchResults = false
+        errorMessage = nil
     }
 
     func streamURL(for video: TVVideo) async throws -> URL {
@@ -58,5 +87,27 @@ final class TVCatalogModel {
         } catch {
             throw TVCatalogError.requestFailed
         }
+    }
+
+    private func loadDiscoveryFallback() async throws {
+        let response = try await SearchResponse.sendThrowingRequest(
+            youtubeModel: youtube,
+            data: [.query: "Trending"]
+        )
+        homeVideos = response.results.compactMap { result in
+            guard let video = result as? YTVideo else { return nil }
+            return makeVideo(from: video)
+        }
+        if homeVideos.isEmpty { throw TVCatalogError.requestFailed }
+    }
+
+    private func makeVideo(from video: YTVideo) -> TVVideo {
+        TVVideo(
+            id: video.videoId,
+            title: video.title ?? "Untitled video",
+            channel: video.channel?.name ?? "YouTube",
+            thumbnailURL: video.thumbnails.last?.url,
+            duration: video.timeLength ?? ""
+        )
     }
 }

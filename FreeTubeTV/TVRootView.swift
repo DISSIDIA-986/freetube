@@ -17,25 +17,23 @@ struct TVRootView: View {
                         .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
                         .frame(width: 520)
                         .onSubmit { Task { await model.search() } }
+                    if !model.query.isEmpty {
+                        Button("Clear") { model.resetToHome() }
+                    }
                 }
 
                 if model.isLoading {
                     ProgressView("Searching…")
                 } else if let errorMessage = model.errorMessage {
                     ContentUnavailableView("Nothing to show", systemImage: "wifi.exclamationmark", description: Text(errorMessage))
-                } else if model.videos.isEmpty {
-                    ContentUnavailableView("Search for a video", systemImage: "magnifyingglass", description: Text("Use the Siri Remote to enter a query."))
                 } else {
-                    ScrollView(.horizontal) {
-                        LazyHStack(spacing: 32) {
-                            ForEach(model.videos) { video in
-                                Button { selectedVideo = video } label: {
-                                    TVVideoCard(video: video)
-                                }
-                                .buttonStyle(.card)
-                            }
-                        }
-                        .padding(.vertical, 20)
+                    if model.isShowingSearchResults {
+                        TVVideoShelf(title: "Search results", videos: model.videos) { selectedVideo = $0 }
+                    } else if model.homeVideos.isEmpty {
+                        ContentUnavailableView("Loading the home feed", systemImage: "play.rectangle", description: Text("FreeTube TV is fetching anonymous recommendations."))
+                    } else {
+                        TVVideoShelf(title: "Trending now", videos: model.homeVideos) { selectedVideo = $0 }
+                        Text("Search YouTube for more videos").foregroundStyle(.secondary)
                     }
                 }
                 Spacer()
@@ -43,6 +41,32 @@ struct TVRootView: View {
             .padding(60)
             .navigationDestination(item: $selectedVideo) { video in
                 TVVideoDetailView(video: video)
+            }
+            .task {
+                await model.loadHome()
+            }
+        }
+    }
+}
+
+private struct TVVideoShelf: View {
+    let title: String
+    let videos: [TVVideo]
+    let onSelect: (TVVideo) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(title).font(.title2.bold())
+            ScrollView(.horizontal) {
+                LazyHStack(spacing: 32) {
+                    ForEach(videos) { video in
+                        Button { onSelect(video) } label: {
+                            TVVideoCard(video: video)
+                        }
+                        .buttonStyle(.card)
+                    }
+                }
+                .padding(.vertical, 20)
             }
         }
     }

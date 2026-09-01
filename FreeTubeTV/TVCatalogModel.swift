@@ -367,6 +367,22 @@ final class TVCatalogModel {
         }
     }
 
+    func channelCollection(for video: TVVideo) async -> TVCollection? {
+        if let channelID = video.channelID {
+            return TVCollection(id: channelID, title: "\(video.channel) · Latest videos", subtitle: "Newest first", thumbnailURL: nil, kind: .channel)
+        }
+        do {
+            let response = try await VideoInfosResponse.sendThrowingRequest(
+                youtubeModel: youtube,
+                data: [.query: video.id]
+            )
+            guard let channel = response.channel else { return nil }
+            return TVCollection(id: channel.channelId, title: "\(channel.name ?? video.channel) · Latest videos", subtitle: "Newest first", thumbnailURL: channel.thumbnails.last?.url, kind: .channel)
+        } catch {
+            return nil
+        }
+    }
+
     private func resolveViaGateway(videoID: String, preferredHeight: Int?) async throws -> TVPlaybackSource {
         guard let gatewayBaseURL else { throw TVCatalogError.requestFailed }
         var components = URLComponents(url: gatewayBaseURL.appendingPathComponent("resolve"), resolvingAgainstBaseURL: false)!

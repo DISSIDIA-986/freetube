@@ -16,6 +16,8 @@ struct TVVideoDetailView: View {
     @State private var selectedResolution = 480
     @State private var channelCollection: TVCollection?
     @State private var channelVideo: TVVideo?
+    @State private var isLookingUpChannel = false
+    @State private var channelLookupFailed = false
 
     private let resolutionOptions = [360, 480, 720, 1080, 1440, 2160]
 
@@ -54,20 +56,25 @@ struct TVVideoDetailView: View {
                         Label("Resolution: \(selectedResolution)p", systemImage: "4k.tv")
                     }
                     .buttonStyle(.borderedProminent)
-                    if let channelID = video.channelID {
-                        Button {
-                            channelCollection = TVCollection(
-                                id: channelID,
-                                title: "\(video.channel) · Latest videos",
-                                subtitle: "Newest first",
-                                thumbnailURL: nil,
-                                kind: .channel
-                            )
-                        } label: {
+                    Button {
+                        isLookingUpChannel = true
+                        channelLookupFailed = false
+                        Task {
+                            channelCollection = await model.channelCollection(for: video)
+                            channelLookupFailed = channelCollection == nil
+                            isLookingUpChannel = false
+                        }
+                    } label: {
+                        if isLookingUpChannel {
+                            Label("Finding channel…", systemImage: "person.2")
+                        } else if channelLookupFailed {
+                            Label("Channel unavailable", systemImage: "person.crop.circle.badge.exclamationmark")
+                        } else {
                             Label("View channel", systemImage: "person.2")
                         }
-                        .buttonStyle(.borderedProminent)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isLookingUpChannel || channelLookupFailed)
                     Spacer()
                 }
                 .padding(.top, 36)

@@ -187,7 +187,10 @@ struct TVVideoDetailView: View {
                 playerItem = item
                 player = AVPlayer(playerItem: item)
                 }
-                player?.automaticallyWaitsToMinimizeStalling = false
+                // Keep AVPlayer's startup buffering enabled. The Mac gateway may be
+                // serving a newly materialized file, so waiting briefly is expected and
+                // must not be treated as a playback failure.
+                player?.automaticallyWaitsToMinimizeStalling = true
                 if let seconds = library.progress(for: video), seconds > 5 {
                     await player?.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
                 }
@@ -235,7 +238,7 @@ struct TVVideoDetailView: View {
 
                 // A ready item that never advances is indistinguishable from a black
                 // surface to the user. Surface the underlying AVFoundation diagnostics.
-                if item.status != .readyToPlay || player.timeControlStatus != .playing {
+                if item.status == .unknown {
                     message = playbackError(for: item)
                     recordRuntimeFailure(message ?? "The stream did not become playable on Apple TV.")
                 }

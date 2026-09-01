@@ -23,6 +23,7 @@ struct TVVideoDetailView: View {
     @State private var isLookingUpChannel = false
     @State private var channelLookupFailed = false
     @State private var playbackAttempt = 0
+    @State private var hasRecordedRuntimeFailure = false
 
     init(video: TVVideo) {
         self.video = video
@@ -92,6 +93,7 @@ struct TVVideoDetailView: View {
             player = nil
             playerItem = nil
             message = nil
+            hasRecordedRuntimeFailure = false
             do {
                 let source = try await model.playbackSource(for: video, preferredHeight: selectedResolution)
                 library.recordHistory(video)
@@ -187,10 +189,12 @@ struct TVVideoDetailView: View {
                     if item.status == .failed {
                         print("FreeTubeTV player error log: \(String(describing: item.errorLog()?.events.map { [$0.errorStatusCode, $0.errorDomain, $0.errorComment ?? ""] }))")
                         message = playbackError(for: item)
+                        recordRuntimeFailure(message ?? "The stream could not be loaded.")
                         return
                     }
                     if player.status == .failed {
                         message = player.error?.localizedDescription ?? "The player failed to load this stream."
+                        recordRuntimeFailure(message ?? "The player failed to load this stream.")
                         return
                     }
                     try? await Task.sleep(for: .milliseconds(500))
@@ -200,6 +204,7 @@ struct TVVideoDetailView: View {
                 // surface to the user. Surface the underlying AVFoundation diagnostics.
                 if item.status != .readyToPlay || player.timeControlStatus != .playing {
                     message = playbackError(for: item)
+                    recordRuntimeFailure(message ?? "The stream did not become playable on Apple TV.")
                 }
             }
             await playbackMonitor?.value
@@ -244,6 +249,12 @@ struct TVVideoDetailView: View {
     private func diagnosticDescription(for error: Error) -> String {
         let nsError = error as NSError
         return "\(error.localizedDescription) [\(nsError.domain):\(nsError.code)]"
+    }
+
+    private func recordRuntimeFailure(_ error: String) {
+        guard !hasRecordedRuntimeFailure else { return }
+        hasRecordedRuntimeFailure = true
+        diagnostics.record(videoID: video.id, resolution: selectedResolution, succeeded: false, error: error)
     }
 
     private func isGatewayURL(_ url: URL) -> Bool {

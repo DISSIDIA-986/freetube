@@ -368,9 +368,17 @@ final class TVCatalogModel {
     }
 
     func playbackSource(for video: TVVideo, preferredHeight: Int? = nil) async throws -> TVPlaybackSource {
-        if let gatewaySource = try? await resolveViaGateway(videoID: video.id, preferredHeight: preferredHeight) {
-            print("FreeTubeTV playback: using Mac gateway")
-            return gatewaySource
+        let requestedHeight = preferredHeight ?? 480
+        let heights = requestedHeight == 480 ? [480] : [requestedHeight, 480]
+        for height in heights {
+            if let gatewaySource = try? await resolveViaGateway(videoID: video.id, preferredHeight: height) {
+                if height != requestedHeight {
+                    print("FreeTubeTV playback: fell back from \(requestedHeight)p to \(height)p")
+                } else {
+                    print("FreeTubeTV playback: using Mac gateway at \(height)p")
+                }
+                return gatewaySource
+            }
         }
         print("FreeTubeTV playback: resolving \(video.id)")
         do {

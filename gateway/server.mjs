@@ -51,6 +51,7 @@ function download(id, quality) {
   const maxHeight = Math.max(144, Math.min(2160, Number(quality) || 480));
   const args = [
     "--no-playlist", "--newline", "--no-warnings",
+    "--retries", "3", "--fragment-retries", "3", "--socket-timeout", "20",
     "-f", `bv*[height<=${maxHeight}][vcodec^=avc1]+ba[acodec^=mp4a]/b[height<=${maxHeight}][ext=mp4][vcodec^=avc1][acodec^=mp4a]`,
     "--concurrent-fragments", "4",
     "--merge-output-format", "mp4",
@@ -155,7 +156,10 @@ async function accessToken() {
 async function youtubeAPI(path) {
   const token = await accessToken();
   if (!token) return null;
-  const response = await fetch(`https://www.googleapis.com/youtube/v3/${path}`, { headers: { Authorization: `Bearer ${token}` } });
+  const response = await fetch(`https://www.googleapis.com/youtube/v3/${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(15_000)
+  });
   const result = await response.json();
   if (!response.ok) throw new Error(result.error?.message ?? "YouTube API request failed");
   return result;

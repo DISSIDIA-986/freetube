@@ -1,6 +1,6 @@
 import Foundation
 
-struct TVVideo: Identifiable, Hashable, Sendable {
+struct TVVideo: Identifiable, Hashable, Codable, Sendable {
     let id: String
     let title: String
     let channel: String

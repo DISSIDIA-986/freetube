@@ -33,3 +33,17 @@ targets:
     dependencies:
       - package: YouTubeKit
         product: YouTubeKit
+  FreeTubeTVTests:
+    type: bundle.unit-test
+    platform: tvOS
+    sources:
+      - path: FreeTubeTVTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.neoniu.FreeTubeTVTests
+        PRODUCT_NAME: FreeTubeTVTests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: 5.0
+        DEVELOPMENT_TEAM: MA73Z27922
+    dependencies:
+      - target: FreeTubeTV

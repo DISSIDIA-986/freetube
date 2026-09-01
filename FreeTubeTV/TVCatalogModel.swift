@@ -13,7 +13,35 @@ final class TVCatalogModel {
     var errorMessage: String?
 
     private let youtube = YouTubeModel()
-    private let gatewayBaseURL = URL(string: "http://192.168.1.79:8787")!
+    private(set) var gatewayHost: String
+    private let gatewayPort = 8787
+
+    init() {
+        gatewayHost = UserDefaults.standard.string(forKey: "tv.freetube.gatewayHost") ?? "192.168.1.79"
+    }
+
+    var gatewayBaseURL: URL? {
+        URL(string: "http://\(gatewayHost):\(gatewayPort)")
+    }
+
+    func updateGatewayHost(_ host: String) {
+        let cleaned = host.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "http://", with: "")
+            .replacingOccurrences(of: "https://", with: "")
+            .split(separator: "/", maxSplits: 1).first.map(String.init) ?? ""
+        gatewayHost = cleaned
+        UserDefaults.standard.set(cleaned, forKey: "tv.freetube.gatewayHost")
+    }
+
+    func checkGateway() async -> Bool {
+        guard let base = gatewayBaseURL else { return false }
+        do {
+            let (_, response) = try await URLSession.shared.data(from: base.appendingPathComponent("healthz"))
+            return (response as? HTTPURLResponse)?.statusCode == 200
+        } catch {
+            return false
+        }
+    }
 
     func loadHome() async {
         guard homeVideos.isEmpty else { return }
@@ -131,6 +159,7 @@ final class TVCatalogModel {
     }
 
     private func resolveViaGateway(videoID: String) async throws -> TVPlaybackSource {
+        guard let gatewayBaseURL else { throw TVCatalogError.requestFailed }
         var components = URLComponents(url: gatewayBaseURL.appendingPathComponent("resolve"), resolvingAgainstBaseURL: false)!
         components.queryItems = [URLQueryItem(name: "id", value: videoID)]
         let (data, response) = try await URLSession.shared.data(from: components.url!)

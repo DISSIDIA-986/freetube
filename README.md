@@ -4,7 +4,8 @@
 
 The repository includes a separate `FreeTubeTV.xcodeproj` for the tvOS MVP. It keeps the existing
 iOS app target unchanged and provides anonymous home/search, video cards, full-screen playback,
-and Siri Remote navigation.
+and Siri Remote navigation. The tvOS build also includes a local Library for Favorites and
+Recently Watched, plus Settings for changing and testing the Mac playback gateway.
 
 Open `FreeTubeTV.xcodeproj` in Xcode, select the `FreeTubeTV` scheme, choose an Apple TV simulator
 or a connected Apple TV device, set your Apple Development team, and run. The tvOS target uses
@@ -23,8 +24,8 @@ brew install yt-dlp ffmpeg
 node gateway/server.mjs
 ```
 
-The gateway listens on port `8787`; the current development build points to `192.168.1.79:8787`.
-Update `gatewayBaseURL` in `FreeTubeTV/TVCatalogModel.swift` if the Mac's LAN address changes.
+The gateway listens on port `8787`; the development default points to `192.168.1.79:8787`.
+The Apple TV Settings tab can change and test this host without rebuilding the app.
 The first play of a new video waits for the download/merge to finish; subsequent plays use the
 local cache in `gateway-cache/` and support HTTP Range requests.
 

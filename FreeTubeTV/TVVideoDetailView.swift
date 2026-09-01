@@ -3,6 +3,7 @@ import SwiftUI
 
 struct TVVideoDetailView: View {
     @Environment(TVCatalogModel.self) private var model
+    @Environment(TVLibraryStore.self) private var library
     let video: TVVideo
     @State private var player: AVPlayer?
     @State private var playerItem: AVPlayerItem?
@@ -36,8 +37,9 @@ struct TVVideoDetailView: View {
         .task {
             do {
                 let source = try await model.playbackSource(for: video)
+                library.recordHistory(video)
                 let url = source.videoURL
-                if source.audioURL == nil && source.videoURL.host == "192.168.1.79" {
+                if source.audioURL == nil && isGatewayURL(source.videoURL) {
                     let item = AVPlayerItem(url: source.videoURL)
                     playerItem = item
                     player = AVPlayer(playerItem: item)
@@ -152,5 +154,11 @@ struct TVVideoDetailView: View {
     private func diagnosticDescription(for error: Error) -> String {
         let nsError = error as NSError
         return "\(error.localizedDescription) [\(nsError.domain):\(nsError.code)]"
+    }
+
+    private func isGatewayURL(_ url: URL) -> Bool {
+        guard let gatewayHost = model.gatewayBaseURL?.host,
+              let sourceHost = url.host else { return false }
+        return sourceHost.caseInsensitiveCompare(gatewayHost) == .orderedSame
     }
 }

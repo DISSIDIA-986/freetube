@@ -16,6 +16,9 @@ const auth = { accessToken: null, refreshToken: null, expiresAt: 0 };
 const deviceTokens = new Set();
 const googleClientID = process.env.FREETUBE_GOOGLE_CLIENT_ID ?? "";
 const oauthRedirectURI = process.env.FREETUBE_GOOGLE_REDIRECT_URI ?? `http://127.0.0.1:${port}/oauth/callback`;
+const ytdlpPlayerClient = process.env.FREETUBE_YTDLP_PLAYER_CLIENT ?? "tv";
+const ytdlpPotProviderURL = process.env.FREETUBE_YTDLP_POT_PROVIDER_URL ?? "http://127.0.0.1:4416";
+const ytdlpCookiesFile = process.env.FREETUBE_YTDLP_COOKIES_FILE ?? "";
 const authFile = join(process.cwd(), ".gateway-auth.json");
 const historyFile = join(process.cwd(), ".gateway-history.json");
 try {
@@ -52,12 +55,14 @@ function download(id, quality) {
   const args = [
     "--no-playlist", "--newline", "--no-warnings",
     "--retries", "3", "--fragment-retries", "3", "--socket-timeout", "20",
+    "--extractor-args", `youtube:player_client=${ytdlpPlayerClient};youtubepot-bgutilhttp:base_url=${ytdlpPotProviderURL}`,
     "-f", `bv*[height<=${maxHeight}][vcodec^=avc1]+ba[acodec^=mp4a]/b[height<=${maxHeight}][ext=mp4][vcodec^=avc1][acodec^=mp4a]`,
     "--concurrent-fragments", "4",
     "--merge-output-format", "mp4",
     "-o", output,
     `https://www.youtube.com/watch?v=${id}`,
   ];
+  if (ytdlpCookiesFile && existsSync(ytdlpCookiesFile)) args.splice(2, 0, "--cookies", ytdlpCookiesFile);
   const promise = new Promise((resolve, reject) => {
     console.log(`[gateway] downloading ${id} at <=${maxHeight}p`);
     const child = spawn("yt-dlp", args, { stdio: ["ignore", "pipe", "pipe"] });

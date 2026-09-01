@@ -67,12 +67,14 @@ enum TVCatalogError: LocalizedError, Equatable {
     case emptyQuery
     case noPlayableStream
     case requestFailed
+    case gateway(String)
 
     var errorDescription: String? {
         switch self {
         case .emptyQuery: return "Enter a search term."
         case .noPlayableStream: return "This video has no playable stream."
         case .requestFailed: return "Unable to load YouTube right now. Check your network and try again."
+        case .gateway(let message): return "Mac playback gateway: \(message)"
         }
     }
 }

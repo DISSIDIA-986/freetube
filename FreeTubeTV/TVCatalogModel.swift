@@ -370,16 +370,22 @@ final class TVCatalogModel {
     func playbackSource(for video: TVVideo, preferredHeight: Int? = nil) async throws -> TVPlaybackSource {
         let requestedHeight = preferredHeight ?? 480
         let heights = requestedHeight == 480 ? [480] : [requestedHeight, 480]
+        var gatewayError: Error?
         for height in heights {
-            if let gatewaySource = try? await resolveViaGateway(videoID: video.id, preferredHeight: height) {
+            do {
+                let gatewaySource = try await resolveViaGateway(videoID: video.id, preferredHeight: height)
                 if height != requestedHeight {
                     print("FreeTubeTV playback: fell back from \(requestedHeight)p to \(height)p")
                 } else {
                     print("FreeTubeTV playback: using Mac gateway at \(height)p")
                 }
                 return gatewaySource
+            } catch {
+                gatewayError = error
+                print("FreeTubeTV playback: gateway \(height)p failed: \(String(reflecting: error))")
             }
         }
+        if let gatewayError { throw gatewayError }
         print("FreeTubeTV playback: resolving \(video.id)")
         do {
             let response = try await VideoInfosResponse.sendThrowingRequest(
@@ -457,8 +463,13 @@ final class TVCatalogModel {
             components.queryItems?.append(URLQueryItem(name: "quality", value: String(preferredHeight)))
         }
         let (data, response) = try await URLSession.shared.data(from: components.url!)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-            throw TVCatalogError.requestFailed
+        guard let http = response as? HTTPURLResponse else {
+            throw TVCatalogError.gateway("No response from the Mac gateway.")
+        }
+        guard http.statusCode == 200 else {
+            struct GatewayError: Decodable { let error: String? }
+            let detail = (try? JSONDecoder().decode(GatewayError.self, from: data)).flatMap(\.error)
+            throw TVCatalogError.gateway(detail ?? "HTTP \(http.statusCode) while resolving the video.")
         }
         struct GatewayResponse: Decodable { let url: URL }
         let result = try JSONDecoder().decode(GatewayResponse.self, from: data)

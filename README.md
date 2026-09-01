@@ -28,6 +28,23 @@ brew install yt-dlp ffmpeg
 node gateway/server.mjs
 ```
 
+YouTube may require a Proof-of-Origin token before `yt-dlp` can resolve a stream. The
+recommended local setup is the open-source `bgutil-ytdlp-pot-provider` service and its yt-dlp
+plugin. Install the plugin into the Python environment used by `yt-dlp`, start the provider on
+port `4416`, then start the gateway with:
+
+```sh
+FREETUBE_YTDLP_PLAYER_CLIENT=tv \
+FREETUBE_YTDLP_POT_PROVIDER_URL=http://127.0.0.1:4416 \
+node gateway/server.mjs
+```
+
+If YouTube also requires an authenticated session, set
+`FREETUBE_YTDLP_COOKIES_FILE` to a local cookies file exported from the same YouTube account and
+IP. Keep that file outside the repository; `.gitignore` excludes local credential files.
+PO Tokens and cookies are short-lived and account/IP-bound, so the gateway reports the original
+YouTube error instead of falling back to a misleading tvOS `AVFoundation -11828` error.
+
 The gateway listens on port `8787`; the development default points to `192.168.1.79:8787`.
 The Apple TV Settings tab can change and test this host without rebuilding the app.
 The first play of a new video waits for the download/merge to finish; subsequent plays use the

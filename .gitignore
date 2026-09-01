@@ -45,6 +45,19 @@ Carthage/Build/
 # Log files
 *.log
 
+# Local credentials and runtime state — never commit OAuth tokens, secrets, or
+# personal gateway data. Keep only redacted example configuration in Git.
+.env
+.env.*
+!.env.example
+*credentials*.json
+*client_secret*.json
+*oauth*.json
+*.pem
+*.p12
+*.key
+.gateway-*
+
 # Package files
 *.jar
 

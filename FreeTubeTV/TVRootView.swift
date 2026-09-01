@@ -43,7 +43,8 @@ struct TVRootView: View {
     }
 
     private var homeView: some View {
-        VStack(alignment: .leading, spacing: 28) {
+        ScrollView(.vertical) {
+            LazyVStack(alignment: .leading, spacing: 28) {
             HStack {
                 Text("FreeTube TV").font(.largeTitle.bold())
                 Spacer()
@@ -105,12 +106,24 @@ struct TVRootView: View {
                 if !model.subscriptionVideos.isEmpty {
                     TVVideoShelf(title: "From your subscriptions", videos: model.subscriptionVideos) { selectedVideo = $0 }
                 }
-                TVVideoShelf(title: "Trending now", videos: model.homeVideos) { selectedVideo = $0 }
+                ForEach(Array(model.homeVideos.chunked(into: 8).enumerated()), id: \.offset) { index, page in
+                    TVVideoShelf(title: index == 0 ? "Trending now" : "Trending now · Page \(index + 1)", videos: page) { selectedVideo = $0 }
+                }
+                if model.hasMoreHome {
+                    HStack(spacing: 16) {
+                        if model.isLoadingMoreHome {
+                            ProgressView("Loading more recommendations…")
+                        } else {
+                            Button("Load more") { Task { await model.loadMoreHome() } }
+                        }
+                    }
+                    .onAppear { Task { await model.loadMoreHome() } }
+                }
                 Text("Search YouTube for more videos").foregroundStyle(.secondary)
             }
-            Spacer()
+            }
+            .padding(60)
         }
-        .padding(60)
         .task {
             await model.loadHome()
             if await model.loadGatewayAccount() {
@@ -159,6 +172,15 @@ struct TVRootView: View {
     }
 }
 
+private extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        guard size > 0 else { return [] }
+        return stride(from: 0, to: count, by: size).map { start in
+            Array(self[start..<Swift.min(start + size, count)])
+        }
+    }
+}
+
 private struct TVVideoShelf: View {
     @Environment(TVLibraryStore.self) private var library
     let title: String
@@ -189,6 +211,9 @@ private struct TVVideoShelf: View {
                 }
                 .padding(.vertical, 20)
             }
+            // A horizontal ScrollView can collapse while AsyncImage is still loading on tvOS.
+            // Give the shelf a stable viewport so cards remain focusable and visible.
+            .frame(height: 285)
         }
     }
 }
@@ -222,6 +247,7 @@ private struct TVCollectionShelf: View {
                 }
                 .padding(.vertical, 10)
             }
+            .frame(height: 245)
         }
     }
 }
@@ -233,14 +259,18 @@ private struct TVCollectionView: View {
     let onSelect: (TVVideo) -> Void
     @State private var videos: [TVVideo] = []
     @State private var errorMessage: String?
+    @State private var isLoading = true
 
     var body: some View {
         NavigationStack {
             Group {
-                if let errorMessage {
-                    ContentUnavailableView("Unable to load collection", systemImage: "wifi.exclamationmark", description: Text(errorMessage))
-                } else if videos.isEmpty {
+                if isLoading {
                     ProgressView("Loading \(collection.title)…")
+                } else if let errorMessage {
+                    ContentUnavailableView("Unable to load collection", systemImage: "wifi.exclamationmark", description: Text(errorMessage))
+                    Button("Retry") { Task { await loadVideos() } }
+                } else if videos.isEmpty {
+                    ContentUnavailableView("No videos in this collection", systemImage: "rectangle.stack", description: Text("This playlist may be private, empty, or temporarily unavailable."))
                 } else {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 20) {
@@ -269,11 +299,16 @@ private struct TVCollectionView: View {
             }
             .navigationTitle(collection.title)
             .toolbar { Button("Done") { dismiss() } }
-            .task {
-                do { videos = try await model.loadCollection(collection) }
-                catch { errorMessage = error.localizedDescription }
-            }
+            .task { await loadVideos() }
         }
+    }
+
+    private func loadVideos() async {
+        isLoading = true
+        errorMessage = nil
+        do { videos = try await model.loadCollection(collection) }
+        catch { errorMessage = error.localizedDescription }
+        isLoading = false
     }
 }
 

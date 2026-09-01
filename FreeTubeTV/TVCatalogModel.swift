@@ -8,6 +8,8 @@ final class TVCatalogModel {
     private static let regionDefaultsKey = "tv.freetube.region.v2"
     var query = ""
     private(set) var homeVideos: [TVVideo] = []
+    private(set) var isLoadingMoreHome = false
+    private(set) var hasMoreHome = true
     private(set) var subscriptionVideos: [TVVideo] = []
     private(set) var likedVideos: [TVVideo] = []
     private(set) var cloudPlaylists: [TVCollection] = []
@@ -164,12 +166,13 @@ final class TVCatalogModel {
                 youtubeModel: youtube,
                 data: [:]
             )
-            let results = response.results.map(makeVideo(from:))
-            if !results.isEmpty {
-                homeVideos = results
-                return
+            appendHomeVideos(response.results.map(makeVideo(from:)))
+            homeContinuationToken = response.continuationToken
+            homeVisitorData = response.visitorData
+            while homeVideos.count < Self.minimumHomeVideos, homeContinuationToken != nil {
+                await fetchMoreHome()
             }
-            try await loadDiscoveryFallback()
+            if homeVideos.isEmpty { try await loadDiscoveryFallback() }
         } catch {
             do {
                 try await loadDiscoveryFallback()
@@ -181,8 +184,50 @@ final class TVCatalogModel {
 
     func reloadHome() async {
         homeVideos = []
+        homeContinuationToken = nil
+        homeVisitorData = nil
+        hasMoreHome = true
         errorMessage = nil
         await loadHome()
+    }
+
+    /// Loads the next Home continuation. This is safe to call repeatedly from a
+    /// tvOS scroll sentinel because concurrent/re-entrant requests are ignored.
+    func loadMoreHome() async {
+        guard !isLoadingMoreHome, hasMoreHome, homeContinuationToken != nil else {
+            if homeContinuationToken == nil { hasMoreHome = false }
+            return
+        }
+        isLoadingMoreHome = true
+        defer { isLoadingMoreHome = false }
+        await fetchMoreHome()
+    }
+
+    private func fetchMoreHome() async {
+        guard hasMoreHome, let token = homeContinuationToken else {
+            hasMoreHome = false
+            return
+        }
+        do {
+            let continuation: HomeScreenResponse.Continuation
+            if let homeVisitorData {
+                continuation = try await HomeScreenResponse.Continuation.sendThrowingRequest(
+                    youtubeModel: youtube,
+                    data: [.continuation: token, .visitorData: homeVisitorData]
+                )
+            } else {
+                continuation = try await HomeScreenResponse.Continuation.sendThrowingRequest(
+                    youtubeModel: youtube,
+                    data: [.continuation: token]
+                )
+            }
+            appendHomeVideos(continuation.results.map(makeVideo(from:)))
+            homeContinuationToken = continuation.continuationToken
+            hasMoreHome = continuation.continuationToken != nil
+        } catch {
+            // Keep the already loaded feed usable. The next scroll sentinel can
+            // retry instead of replacing a good feed with an error screen.
+        }
     }
 
     func search() async {
@@ -223,10 +268,14 @@ final class TVCatalogModel {
     func loadCollection(_ collection: TVCollection) async throws -> [TVVideo] {
         switch collection.kind {
         case .playlist:
-            let response = try await PlaylistInfosResponse.sendThrowingRequest(
+            var response = try await PlaylistInfosResponse.sendThrowingRequest(
                 youtubeModel: youtube,
                 data: [.browseId: collection.id]
             )
+            while response.results.count < 200, response.continuationToken != nil {
+                let continuation = try await response.fetchContinuationThrowing(youtubeModel: youtube)
+                response.mergeWithContinuation(continuation)
+            }
             return response.results.map(makeVideo(from:))
         case .channel:
             let response = try await ChannelInfosResponse.sendThrowingRequest(
@@ -333,8 +382,20 @@ final class TVCatalogModel {
                     guard let video = result as? YTVideo else { return nil }
                     return makeVideo(from: video)
                 }
-                if !results.isEmpty {
-                    homeVideos = results
+                appendHomeVideos(results)
+                var continuation = response
+                while homeVideos.count < Self.minimumHomeVideos, continuation.continuationToken != nil {
+                    let next = try await continuation.fetchContinuationThrowing(youtubeModel: youtube)
+                    appendHomeVideos(next.results.compactMap { result in
+                        guard let video = result as? YTVideo else { return nil }
+                        return makeVideo(from: video)
+                    })
+                    continuation.continuationToken = next.continuationToken
+                }
+                if !homeVideos.isEmpty {
+                    homeContinuationToken = continuation.continuationToken
+                    homeVisitorData = continuation.visitorData
+                    hasMoreHome = homeContinuationToken != nil
                     return
                 }
             } catch {
@@ -343,6 +404,17 @@ final class TVCatalogModel {
             }
         }
         throw TVCatalogError.requestFailed
+    }
+
+    private static let minimumHomeVideos = 18
+    private var homeContinuationToken: String?
+    private var homeVisitorData: String?
+
+    private func appendHomeVideos(_ videos: [TVVideo]) {
+        var existingIDs = Set(homeVideos.map(\.id))
+        for video in videos where existingIDs.insert(video.id).inserted {
+            homeVideos.append(video)
+        }
     }
 
     private func progressiveURL(from formats: [any AdaptiveDownloadFormat]) -> URL? {

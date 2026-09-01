@@ -24,9 +24,12 @@ struct TVVideoDetailView: View {
     @State private var channelLookupFailed = false
     @State private var playbackAttempt = 0
     @State private var hasRecordedRuntimeFailure = false
+    @State private var didHandlePlaybackEnd = false
+    let onFinished: (() -> Void)?
 
-    init(video: TVVideo) {
+    init(video: TVVideo, onFinished: (() -> Void)? = nil) {
         self.video = video
+        self.onFinished = onFinished
         let storedResolution = UserDefaults.standard.integer(forKey: Self.resolutionDefaultsKey)
         _selectedResolution = State(initialValue: storedResolution == 0 ? Self.defaultResolution : storedResolution)
     }
@@ -88,12 +91,25 @@ struct TVVideoDetailView: View {
         .fullScreenCover(item: $channelVideo) { selected in
             TVVideoDetailView(video: selected)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime)) { notification in
+            guard let finishedItem = notification.object as? AVPlayerItem,
+                  finishedItem === playerItem,
+                  !didHandlePlaybackEnd else { return }
+            didHandlePlaybackEnd = true
+            player?.pause()
+            if let onFinished {
+                onFinished()
+            } else {
+                dismiss()
+            }
+        }
         .task(id: "\(selectedResolution)-\(playbackAttempt)") {
             player?.pause()
             player = nil
             playerItem = nil
             message = nil
             hasRecordedRuntimeFailure = false
+            didHandlePlaybackEnd = false
             do {
                 let source = try await model.playbackSource(for: video, preferredHeight: selectedResolution)
                 library.recordHistory(video)

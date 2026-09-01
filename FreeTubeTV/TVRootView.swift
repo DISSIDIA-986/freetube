@@ -5,6 +5,7 @@ struct TVRootView: View {
     @Environment(TVLibraryStore.self) private var library
     @Environment(TVAppState.self) private var appState
     @State private var selectedVideo: TVVideo?
+    @State private var playbackQueue: [TVVideo] = []
     @State private var selectedCollection: TVCollection?
     @FocusState private var searchFocused: Bool
     @Namespace private var homeFocusNamespace
@@ -27,11 +28,14 @@ struct TVRootView: View {
                 .tag(2)
         }
         .fullScreenCover(item: $selectedVideo) { video in
-            TVVideoDetailView(video: video)
+            TVVideoDetailView(video: video) {
+                playNextVideo()
+            }
         }
         .sheet(item: $selectedCollection) { collection in
             TVCollectionView(collection: collection) { video in
                 selectedCollection = nil
+                playbackQueue = []
                 selectedVideo = video
             }
         }
@@ -93,7 +97,7 @@ struct TVRootView: View {
                 if !model.collections.isEmpty {
                     TVCollectionShelf(collections: model.collections) { selectedCollection = $0 }
                 }
-                TVVideoShelf(title: "Search results", videos: model.videos) { selectedVideo = $0 }
+                        TVVideoShelf(title: "Search results", videos: model.videos) { selectVideo($0, from: model.videos) }
             } else if model.homeVideos.isEmpty {
                 ContentUnavailableView("Loading the home feed", systemImage: "play.rectangle", description: Text("FreeTube TV is fetching anonymous recommendations."))
             } else {
@@ -104,10 +108,10 @@ struct TVRootView: View {
                     }
                 }
                 if !model.subscriptionVideos.isEmpty {
-                    TVVideoShelf(title: "From your subscriptions", videos: model.subscriptionVideos) { selectedVideo = $0 }
+                    TVVideoShelf(title: "From your subscriptions", videos: model.subscriptionVideos) { selectVideo($0, from: model.subscriptionVideos) }
                 }
                 ForEach(Array(model.homeVideos.chunked(into: 8).enumerated()), id: \.offset) { index, page in
-                    TVVideoShelf(title: index == 0 ? "Trending now" : "Trending now · Page \(index + 1)", videos: page) { selectedVideo = $0 }
+                    TVVideoShelf(title: index == 0 ? "Trending now" : "Trending now · Page \(index + 1)", videos: page) { selectVideo($0, from: model.homeVideos) }
                 }
                 if model.hasMoreHome {
                     HStack(spacing: 16) {
@@ -143,20 +147,20 @@ struct TVRootView: View {
                 Text("Library").font(.largeTitle.bold())
                 let continueVideos = library.history.filter { library.progress(for: $0) != nil }
                 if !continueVideos.isEmpty {
-                    TVVideoShelf(title: "Continue Watching", videos: continueVideos) { selectedVideo = $0 }
+                    TVVideoShelf(title: "Continue Watching", videos: continueVideos) { selectVideo($0, from: continueVideos) }
                 }
                 if !library.favorites.isEmpty {
-                    TVVideoShelf(title: "Favorites", videos: library.favorites) { selectedVideo = $0 }
+                    TVVideoShelf(title: "Favorites", videos: library.favorites) { selectVideo($0, from: library.favorites) }
                 } else {
                     ContentUnavailableView("No favorites yet", systemImage: "star", description: Text("Open a video and add it to Favorites."))
                 }
                 if !library.history.isEmpty {
-                    TVVideoShelf(title: "Recently watched", videos: library.history) { selectedVideo = $0 }
+                    TVVideoShelf(title: "Recently watched", videos: library.history) { selectVideo($0, from: library.history) }
                 } else {
                     Text("Your watch history will appear here after playback.").foregroundStyle(.secondary)
                 }
                 if !model.likedVideos.isEmpty {
-                    TVVideoShelf(title: "YouTube liked videos", videos: model.likedVideos) { selectedVideo = $0 }
+                    TVVideoShelf(title: "YouTube liked videos", videos: model.likedVideos) { selectVideo($0, from: model.likedVideos) }
                 }
                 if !model.cloudPlaylists.isEmpty {
                     TVCollectionShelf(collections: model.cloudPlaylists) { selectedCollection = $0 }
@@ -169,6 +173,28 @@ struct TVRootView: View {
 
     private var settingsView: some View {
         TVSettingsView(onReturnHome: { appState.selectedTab = 0 })
+    }
+
+    private func selectVideo(_ video: TVVideo, from videos: [TVVideo]) {
+        selectedVideo = video
+        guard let index = videos.firstIndex(of: video) else {
+            playbackQueue = []
+            return
+        }
+        playbackQueue = Array(videos.dropFirst(index + 1))
+    }
+
+    private func playNextVideo() {
+        guard let next = playbackQueue.first else {
+            selectedVideo = nil
+            playbackQueue = []
+            return
+        }
+        playbackQueue.removeFirst()
+        selectedVideo = nil
+        DispatchQueue.main.async {
+            selectedVideo = next
+        }
     }
 }
 

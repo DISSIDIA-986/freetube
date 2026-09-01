@@ -9,15 +9,16 @@ struct TVPlayerSurface: UIViewControllerRepresentable {
     let selectedResolution: Int
     let onResolutionSelected: (Int) -> Void
     let onChannelSelected: () -> Void
+    let onYouTubeSelected: () -> Void
 
     func makeUIViewController(context: Context) -> TVNativePlayerViewController {
         let controller = TVNativePlayerViewController()
-        controller.update(player: player, selectedResolution: selectedResolution, onResolutionSelected: onResolutionSelected, onChannelSelected: onChannelSelected)
+        controller.update(player: player, selectedResolution: selectedResolution, onResolutionSelected: onResolutionSelected, onChannelSelected: onChannelSelected, onYouTubeSelected: onYouTubeSelected)
         return controller
     }
 
     func updateUIViewController(_ controller: TVNativePlayerViewController, context: Context) {
-        controller.update(player: player, selectedResolution: selectedResolution, onResolutionSelected: onResolutionSelected, onChannelSelected: onChannelSelected)
+        controller.update(player: player, selectedResolution: selectedResolution, onResolutionSelected: onResolutionSelected, onChannelSelected: onChannelSelected, onYouTubeSelected: onYouTubeSelected)
     }
 }
 
@@ -29,6 +30,7 @@ final class TVNativePlayerViewController: UIViewController, AVPlayerViewControll
     private var selectedResolution = 480
     private var onResolutionSelected: ((Int) -> Void)?
     private var onChannelSelected: (() -> Void)?
+    private var onYouTubeSelected: (() -> Void)?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -58,7 +60,7 @@ final class TVNativePlayerViewController: UIViewController, AVPlayerViewControll
         [playerViewController.view]
     }
 
-    func update(player: AVPlayer, selectedResolution: Int, onResolutionSelected: @escaping (Int) -> Void, onChannelSelected: @escaping () -> Void) {
+    func update(player: AVPlayer, selectedResolution: Int, onResolutionSelected: @escaping (Int) -> Void, onChannelSelected: @escaping () -> Void, onYouTubeSelected: @escaping () -> Void) {
         pendingPlayer = player
         if isViewLoaded, playerViewController.player !== player {
             playerViewController.player = player
@@ -66,6 +68,7 @@ final class TVNativePlayerViewController: UIViewController, AVPlayerViewControll
         self.selectedResolution = selectedResolution
         self.onResolutionSelected = onResolutionSelected
         self.onChannelSelected = onChannelSelected
+        self.onYouTubeSelected = onYouTubeSelected
         updateTransportBar()
     }
 
@@ -88,6 +91,9 @@ final class TVNativePlayerViewController: UIViewController, AVPlayerViewControll
         let channelAction = UIAction(title: "View Channel", image: UIImage(systemName: "person.2")) { [weak self] _ in
             self?.onChannelSelected?()
         }
-        playerViewController.transportBarCustomMenuItems = [resolutionMenu, channelAction]
+        let youtubeAction = UIAction(title: "Open in YouTube", image: UIImage(systemName: "arrow.up.right.square")) { [weak self] _ in
+            self?.onYouTubeSelected?()
+        }
+        playerViewController.transportBarCustomMenuItems = [resolutionMenu, channelAction, youtubeAction]
     }
 }

@@ -45,10 +45,20 @@ IP. Keep that file outside the repository; `.gitignore` excludes local credentia
 PO Tokens and cookies are short-lived and account/IP-bound, so the gateway reports the original
 YouTube error instead of falling back to a misleading tvOS `AVFoundation -11828` error.
 
+If the embedded player cannot start, the playback error screen includes `Open in YouTube`.
+On Apple TV this first tries the known `youtube://watch/<video_id>` handoff and then the regular
+YouTube HTTPS URL. This is a manual fallback: tvOS and the YouTube app do not provide a public
+contract for returning playback state, completion events, queue control, or resolution selection
+to FreeTube.
+
 The gateway listens on port `8787`; the development default points to `192.168.1.79:8787`.
 The Apple TV Settings tab can change and test this host without rebuilding the app.
 The first play of a new video waits for the download/merge to finish; subsequent plays use the
 local cache in `gateway-cache/` and support HTTP Range requests.
+
+When a video reaches its natural end, its saved resume position is cleared. Opening that video
+again from History or Favorites starts it from the beginning instead of replaying the final few
+seconds and advancing immediately to the next queued video.
 
 A native SwiftUI YouTube client for iOS. Cookie-based auth, AVPlayer playback, offline downloads, no Google API key.
 

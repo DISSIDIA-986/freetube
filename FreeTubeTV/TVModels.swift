@@ -1,5 +1,19 @@
 import Foundation
 
+enum TVYouTubeHandoff {
+    static func appURL(for videoID: String) -> URL? {
+        guard !videoID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        return URL(string: "youtube://watch/\(videoID)")
+    }
+
+    static func url(for videoID: String) -> URL? {
+        guard !videoID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        var components = URLComponents(string: "https://www.youtube.com/watch")
+        components?.queryItems = [URLQueryItem(name: "v", value: videoID)]
+        return components?.url
+    }
+}
+
 struct TVVideo: Identifiable, Hashable, Codable, Sendable {
     let id: String
     let title: String

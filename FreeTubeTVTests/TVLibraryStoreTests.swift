@@ -52,6 +52,16 @@ final class TVLibraryStoreTests: XCTestCase {
         XCTAssertTrue(TVLibraryStore(defaults: defaults).history.isEmpty)
     }
 
+    func testCompletedVideoProgressCanBeClearedForFreshPlayback() {
+        let store = TVLibraryStore(defaults: defaults)
+        let video = makeVideo(id: "completed")
+        store.saveProgress(599, for: video)
+        XCTAssertEqual(store.progress(for: video), 599)
+        store.clearProgress(for: video)
+        XCTAssertNil(store.progress(for: video))
+        XCTAssertNil(TVLibraryStore(defaults: defaults).progress(for: video))
+    }
+
     func testMergeHistoryDeduplicatesAndKeepsRemoteOrder() {
         let store = TVLibraryStore(defaults: defaults)
         store.recordHistory(makeVideo(id: "local"))
@@ -133,6 +143,19 @@ final class TVLibraryStoreTests: XCTestCase {
         XCTAssertEqual(TVPlaybackQueue.popNext(from: &queue)?.id, "one")
         XCTAssertNil(TVPlaybackQueue.popNext(from: &queue))
         XCTAssertTrue(queue.isEmpty)
+    }
+
+    func testYouTubeHandoffBuildsExactVideoURL() {
+        XCTAssertEqual(
+            TVYouTubeHandoff.url(for: "abc123")?.absoluteString,
+            "https://www.youtube.com/watch?v=abc123"
+        )
+        XCTAssertEqual(TVYouTubeHandoff.appURL(for: "abc123")?.absoluteString, "youtube://watch/abc123")
+    }
+
+    func testYouTubeHandoffRejectsEmptyOrWhitespaceOnlyIDs() {
+        XCTAssertNil(TVYouTubeHandoff.url(for: ""))
+        XCTAssertNil(TVYouTubeHandoff.url(for: "   \n"))
     }
 
     private func makeVideo(id: String, publishedRelative: String? = nil) -> TVVideo {

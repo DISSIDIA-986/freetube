@@ -1,7 +1,9 @@
 import AVKit
 import SwiftUI
+import UIKit
 
 struct TVVideoDetailView: View {
+    private enum ErrorAction: Hashable { case retry, openInYouTube }
     private static let resolutionDefaultsKey = "tv.freetube.playbackResolution"
     private static let defaultResolution = 480
 
@@ -26,6 +28,8 @@ struct TVVideoDetailView: View {
     @State private var playbackAttempt = 0
     @State private var hasRecordedRuntimeFailure = false
     @State private var didHandlePlaybackEnd = false
+    @FocusState private var focusedErrorAction: ErrorAction?
+    @Namespace private var errorFocusNamespace
     let onFinished: (() -> Void)?
 
     init(video: TVVideo, onFinished: (() -> Void)? = nil) {
@@ -45,7 +49,8 @@ struct TVVideoDetailView: View {
                         selectedResolution = $0
                         UserDefaults.standard.set($0, forKey: Self.resolutionDefaultsKey)
                     },
-                    onChannelSelected: openChannel
+                    onChannelSelected: openChannel,
+                    onYouTubeSelected: openInYouTube
                 )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .ignoresSafeArea()
@@ -54,7 +59,14 @@ struct TVVideoDetailView: View {
                     ContentUnavailableView("Playback unavailable", systemImage: "play.slash", description: Text(message))
                     Button("Retry") { playbackAttempt += 1 }
                         .buttonStyle(.borderedProminent)
+                        .focused($focusedErrorAction, equals: .retry)
+                    Button("Open in YouTube") { openInYouTube() }
+                        .buttonStyle(.bordered)
+                        .focused($focusedErrorAction, equals: .openInYouTube)
                 }
+                .focusSection()
+                .prefersDefaultFocus(true, in: errorFocusNamespace)
+                .onAppear { focusedErrorAction = .retry }
             } else {
                 VStack(spacing: 20) {
                     ProgressView()
@@ -109,6 +121,11 @@ struct TVVideoDetailView: View {
                   !didHandlePlaybackEnd else { return }
             didHandlePlaybackEnd = true
             player?.pause()
+            progressTask?.cancel()
+            // A naturally completed video is no longer a resume point. If it is
+            // opened again from History/Favorites, it must start from the beginning
+            // instead of replaying the last few seconds and immediately advancing.
+            library.clearProgress(for: video)
             if let onFinished {
                 onFinished()
             } else {
@@ -195,6 +212,7 @@ struct TVVideoDetailView: View {
                 return
             } catch {
                 message = diagnosticDescription(for: error)
+                focusedErrorAction = .retry
                 diagnostics.record(videoID: video.id, resolution: selectedResolution, succeeded: false, error: message)
             }
         }
@@ -274,6 +292,31 @@ struct TVVideoDetailView: View {
             channelCollection = await model.channelCollection(for: video)
             channelLookupFailed = channelCollection == nil
             isLookingUpChannel = false
+        }
+    }
+
+    private func openInYouTube() {
+        guard let webURL = TVYouTubeHandoff.url(for: video.id) else {
+            message = "This video has an invalid YouTube identifier."
+            return
+        }
+        if let appURL = TVYouTubeHandoff.appURL(for: video.id), UIApplication.shared.canOpenURL(appURL) {
+            UIApplication.shared.open(appURL, options: [:]) { opened in
+                guard !opened else { return }
+                UIApplication.shared.open(webURL, options: [:]) { webOpened in
+                    guard !webOpened else { return }
+                    Task { @MainActor in
+                        message = "YouTube could not be opened on this Apple TV."
+                    }
+                }
+            }
+            return
+        }
+        UIApplication.shared.open(webURL, options: [:]) { opened in
+            guard !opened else { return }
+            Task { @MainActor in
+                message = "YouTube could not be opened on this Apple TV."
+            }
         }
     }
 

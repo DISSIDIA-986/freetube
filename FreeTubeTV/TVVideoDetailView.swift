@@ -51,7 +51,7 @@ struct TVVideoDetailView: View {
                 player?.automaticallyWaitsToMinimizeStalling = false
                 player?.play()
             } catch {
-                message = error.localizedDescription
+                message = diagnosticDescription(for: error)
             }
         }
         .onDisappear {
@@ -96,5 +96,10 @@ struct TVVideoDetailView: View {
             return "HTTP \(event.errorStatusCode): \(event.errorComment ?? "The stream could not be loaded.")"
         }
         return "The stream did not become playable on Apple TV."
+    }
+
+    private func diagnosticDescription(for error: Error) -> String {
+        let nsError = error as NSError
+        return "\(error.localizedDescription) [\(nsError.domain):\(nsError.code)]"
     }
 }

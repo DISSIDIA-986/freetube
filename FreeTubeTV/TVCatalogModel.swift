@@ -101,7 +101,10 @@ final class TVCatalogModel {
         } catch let error as TVCatalogError {
             throw error
         } catch {
-            throw TVCatalogError.requestFailed
+            // Keep the YouTubeKit error intact. Converting it to a generic requestFailed
+            // error hides cipher/player/network failures and makes tvOS playback impossible
+            // to diagnose from the device.
+            throw error
         }
     }
 

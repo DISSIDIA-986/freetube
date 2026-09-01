@@ -12,21 +12,27 @@ struct TVVideoDetailView: View {
     @State private var localPlaybackURL: URL?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            Text(video.title).font(.title.bold()).lineLimit(3)
-            Text(video.channel).foregroundStyle(.secondary)
-            if let message {
-                ContentUnavailableView("Playback unavailable", systemImage: "play.slash", description: Text(message))
-            } else if let player {
+        ZStack {
+            if let player {
                 TVPlayerSurface(player: player)
-                    .frame(maxWidth: .infinity, minHeight: 520)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .ignoresSafeArea()
+            } else if let message {
+                ContentUnavailableView("Playback unavailable", systemImage: "play.slash", description: Text(message))
             } else {
-                ProgressView("Preparing playback…")
+                VStack(spacing: 20) {
+                    ProgressView()
+                    Text("Preparing (video.title)…")
+                        .font(.title3)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(80)
             }
-            Spacer()
         }
-        .padding(60)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.black)
+        .toolbar(.hidden, for: .navigationBar)
         .task {
             do {
                 let source = try await model.playbackSource(for: video)

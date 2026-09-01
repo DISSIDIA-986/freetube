@@ -5,6 +5,7 @@ import YouTubeKit
 @MainActor
 @Observable
 final class TVCatalogModel {
+    private static let regionDefaultsKey = "tv.freetube.region.v2"
     var query = ""
     private(set) var homeVideos: [TVVideo] = []
     private(set) var videos: [TVVideo] = []
@@ -20,7 +21,7 @@ final class TVCatalogModel {
     init() {
         let defaults = UserDefaults.standard
         gatewayHost = defaults.string(forKey: "tv.freetube.gatewayHost") ?? "192.168.1.79"
-        regionProfile = TVRegionProfile(rawValue: defaults.string(forKey: "tv.freetube.region") ?? "") ?? .northAmerica
+        regionProfile = TVRegionProfile(rawValue: defaults.string(forKey: Self.regionDefaultsKey) ?? "") ?? .northAmerica
         youtube.selectedLocale = regionProfile.rawValue
     }
 
@@ -41,7 +42,7 @@ final class TVCatalogModel {
         guard profile != regionProfile else { return }
         regionProfile = profile
         youtube.selectedLocale = profile.rawValue
-        UserDefaults.standard.set(profile.rawValue, forKey: "tv.freetube.region")
+        UserDefaults.standard.set(profile.rawValue, forKey: Self.regionDefaultsKey)
         homeVideos = []
         videos = []
         isShowingSearchResults = false

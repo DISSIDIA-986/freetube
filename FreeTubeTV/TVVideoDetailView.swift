@@ -28,7 +28,8 @@ struct TVVideoDetailView: View {
         .padding(60)
         .task {
             do {
-                let url = try await model.streamURL(for: video)
+                let source = try await model.playbackSource(for: video)
+                let url = source.videoURL
                 // Route both HLS and progressive MP4 through the same loader. AVPlayer's
                 // direct MP4 requests use its own User-Agent and are rejected by YouTube's
                 // CDN with HTTP 403 even though the signed URL works with our URLSession.
@@ -37,9 +38,30 @@ struct TVVideoDetailView: View {
                 guard let rewrittenURL = TVHLSResourceLoader.rewrite(url) else {
                     throw TVCatalogError.noPlayableStream
                 }
-                let asset = AVURLAsset(url: rewrittenURL)
-                asset.resourceLoader.setDelegate(loader, queue: .main)
-                let item = AVPlayerItem(asset: asset)
+                let videoAsset = AVURLAsset(url: rewrittenURL)
+                videoAsset.resourceLoader.setDelegate(loader, queue: .main)
+                let playbackAsset: AVAsset
+                if let audioURL = source.audioURL,
+                   let rewrittenAudioURL = TVHLSResourceLoader.rewrite(audioURL) {
+                    let audioAsset = AVURLAsset(url: rewrittenAudioURL)
+                    audioAsset.resourceLoader.setDelegate(loader, queue: .main)
+                    let composition = AVMutableComposition()
+                    let duration = try await videoAsset.load(.duration)
+                    let audioDuration = try await audioAsset.load(.duration)
+                    let range = CMTimeRange(start: .zero, duration: min(duration, audioDuration))
+                    guard let videoTrack = try await videoAsset.loadTracks(withMediaType: .video).first,
+                          let audioTrack = try await audioAsset.loadTracks(withMediaType: .audio).first,
+                          let compositionVideo = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid),
+                          let compositionAudio = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) else {
+                        throw TVCatalogError.noPlayableStream
+                    }
+                    try compositionVideo.insertTimeRange(range, of: videoTrack, at: .zero)
+                    try compositionAudio.insertTimeRange(range, of: audioTrack, at: .zero)
+                    playbackAsset = composition
+                } else {
+                    playbackAsset = videoAsset
+                }
+                let item = AVPlayerItem(asset: playbackAsset)
                 playerItem = item
                 player = AVPlayer(playerItem: item)
                 player?.automaticallyWaitsToMinimizeStalling = false

@@ -8,6 +8,11 @@ struct TVVideo: Identifiable, Hashable, Sendable {
     let duration: String
 }
 
+struct TVPlaybackSource: Sendable {
+    let videoURL: URL
+    let audioURL: URL?
+}
+
 enum TVCatalogError: LocalizedError, Equatable {
     case emptyQuery
     case noPlayableStream

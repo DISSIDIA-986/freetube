@@ -71,7 +71,7 @@ final class TVCatalogModel {
         errorMessage = nil
     }
 
-    func streamURL(for video: TVVideo) async throws -> URL {
+    func playbackSource(for video: TVVideo) async throws -> TVPlaybackSource {
         print("FreeTubeTV playback: resolving \(video.id)")
         do {
             let response = try await VideoInfosResponse.sendThrowingRequest(
@@ -82,7 +82,7 @@ final class TVCatalogModel {
             let hlsURL = response.streamingURL
             if let progressive = progressiveURL(from: response.defaultFormats) {
                 print("FreeTubeTV playback: selected base progressive MP4 \(progressive.absoluteString)")
-                return progressive
+                return TVPlaybackSource(videoURL: progressive, audioURL: nil)
             }
 
             // VideoInfosResponse often returns format metadata without signed URLs. The
@@ -101,16 +101,16 @@ final class TVCatalogModel {
                 print("FreeTubeTV playback: detailed default=\(detailed.defaultFormats.count) download=\(detailed.downloadFormats.count)")
                 if let progressive = progressiveURL(from: detailed.defaultFormats) {
                     print("FreeTubeTV playback: selected detailed default MP4 \(progressive.absoluteString)")
-                    return progressive
+                    return TVPlaybackSource(videoURL: progressive, audioURL: nil)
                 }
-                if let progressive = progressiveURL(from: detailed.downloadFormats) {
-                    print("FreeTubeTV playback: selected detailed download MP4 \(progressive.absoluteString)")
-                    return progressive
+                if let source = progressiveSource(from: detailed.downloadFormats) {
+                    print("FreeTubeTV playback: selected detailed download tracks video=\(source.videoURL.absoluteString) audio=\(source.audioURL?.absoluteString ?? "none")")
+                    return source
                 }
             }
             if let hlsURL {
                 print("FreeTubeTV playback: falling back to HLS")
-                return hlsURL
+                return TVPlaybackSource(videoURL: hlsURL, audioURL: nil)
             }
             throw TVCatalogError.noPlayableStream
         } catch let error as TVCatalogError {
@@ -148,10 +148,43 @@ final class TVCatalogModel {
 
         // Prefer H.264/AAC MP4. YouTube often orders VP9/AV1 first, but those streams can
         // produce a black AVPlayer surface on tvOS even though the URL itself is valid.
+        // Only legacy muxed itags contain both an audio and video track. Adaptive itags such
+        // as 137/299 are video-only even though YouTubeKit represents them as VideoDownloadFormat.
+        let muxedItags: Set<Int> = [18, 22, 34, 35, 37, 43, 44, 45, 46, 59, 78]
         return candidates
             .filter { $0.2 }
+            .filter { url, _, _ in
+                guard let itag = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "itag" })?.value,
+                      let value = Int(itag) else { return false }
+                return muxedItags.contains(value)
+            }
             .sorted { $0.1 > $1.1 }
             .first?.0
+    }
+
+    private func progressiveSource(from formats: [any AdaptiveDownloadFormat]) -> TVPlaybackSource? {
+        if let muxed = progressiveURL(from: formats) {
+            return TVPlaybackSource(videoURL: muxed, audioURL: nil)
+        }
+
+        let videos = formats.compactMap { format -> (URL, Int)? in
+            guard let video = format as? VideoDownloadFormat,
+                  let url = video.url,
+                  let codec = video.codec?.lowercased(),
+                  (codec.contains("avc1") || codec.contains("avc")),
+                  video.mimeType?.contains("video/mp4") == true else { return nil }
+            return (url, video.height ?? 0)
+        }.sorted { $0.1 > $1.1 }
+
+        let audios = formats.compactMap { format -> (URL, Int)? in
+            guard let audio = format as? AudioOnlyFormat,
+                  let url = audio.url,
+                  audio.mimeType?.contains("audio/mp4") == true else { return nil }
+            return (url, audio.bitrate ?? 0)
+        }.sorted { $0.1 > $1.1 }
+
+        guard let video = videos.first, let audio = audios.first else { return nil }
+        return TVPlaybackSource(videoURL: video.0, audioURL: audio.0)
     }
 
     private func makeVideo(from video: YTVideo) -> TVVideo {

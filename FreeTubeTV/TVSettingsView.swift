@@ -26,6 +26,22 @@ struct TVSettingsView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+            Section("Recommendations") {
+                Picker("Region and language", selection: Binding(
+                    get: { model.regionProfile },
+                    set: { profile in
+                        model.updateRegionProfile(profile)
+                        Task { await model.loadHome() }
+                    }
+                )) {
+                    ForEach(TVRegionProfile.allCases) { profile in
+                        Text(profile.title).tag(profile)
+                    }
+                }
+                Text("This changes YouTube's locale hint and anonymous discovery search. It is not a strict language filter; YouTube may still return mixed-language results.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
             Section("Local library") {
                 LabeledContent("Favorites", value: "\(library.favorites.count)")
                 LabeledContent("Watch history", value: "\(library.history.count)")

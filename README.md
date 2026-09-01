@@ -7,6 +7,10 @@ iOS app target unchanged and provides anonymous home/search, video cards, full-s
 and Siri Remote navigation. The tvOS build also includes a local Library for Favorites and
 Recently Watched, plus Settings for changing and testing the Mac playback gateway.
 
+Recommendations are anonymous YouTube discovery results, not the signed-in account's personal
+feed. Settings supports China/Chinese and North America/English locale profiles; the profile is
+a discovery hint and does not guarantee every result uses one language.
+
 Open `FreeTubeTV.xcodeproj` in Xcode, select the `FreeTubeTV` scheme, choose an Apple TV simulator
 or a connected Apple TV device, set your Apple Development team, and run. The tvOS target uses
 Bundle ID `com.neoniu.FreeTubeTV` and the YouTubeKit package already used by the iOS app.

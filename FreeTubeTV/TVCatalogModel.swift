@@ -11,13 +11,17 @@ final class TVCatalogModel {
     private(set) var isLoading = false
     private(set) var isShowingSearchResults = false
     var errorMessage: String?
+    private(set) var regionProfile: TVRegionProfile
 
     private let youtube = YouTubeModel()
     private(set) var gatewayHost: String
     private let gatewayPort = 8787
 
     init() {
-        gatewayHost = UserDefaults.standard.string(forKey: "tv.freetube.gatewayHost") ?? "192.168.1.79"
+        let defaults = UserDefaults.standard
+        gatewayHost = defaults.string(forKey: "tv.freetube.gatewayHost") ?? "192.168.1.79"
+        regionProfile = TVRegionProfile(rawValue: defaults.string(forKey: "tv.freetube.region") ?? "") ?? .chinaChinese
+        youtube.selectedLocale = regionProfile.rawValue
     }
 
     var gatewayBaseURL: URL? {
@@ -31,6 +35,17 @@ final class TVCatalogModel {
             .split(separator: "/", maxSplits: 1).first.map(String.init) ?? ""
         gatewayHost = cleaned
         UserDefaults.standard.set(cleaned, forKey: "tv.freetube.gatewayHost")
+    }
+
+    func updateRegionProfile(_ profile: TVRegionProfile) {
+        guard profile != regionProfile else { return }
+        regionProfile = profile
+        youtube.selectedLocale = profile.rawValue
+        UserDefaults.standard.set(profile.rawValue, forKey: "tv.freetube.region")
+        homeVideos = []
+        videos = []
+        isShowingSearchResults = false
+        errorMessage = nil
     }
 
     func checkGateway() async -> Bool {
@@ -174,7 +189,7 @@ final class TVCatalogModel {
     private func loadDiscoveryFallback() async throws {
         let response = try await SearchResponse.sendThrowingRequest(
             youtubeModel: youtube,
-            data: [.query: "Trending"]
+            data: [.query: regionProfile.discoveryQuery]
         )
         homeVideos = response.results.compactMap { result in
             guard let video = result as? YTVideo else { return nil }

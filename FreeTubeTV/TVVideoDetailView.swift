@@ -8,6 +8,7 @@ struct TVVideoDetailView: View {
     @State private var playerItem: AVPlayerItem?
     @State private var hlsLoader: TVHLSResourceLoader?
     @State private var message: String?
+    @State private var playbackMonitor: Task<Void, Never>?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -54,14 +55,46 @@ struct TVVideoDetailView: View {
             }
         }
         .onDisappear {
+            playbackMonitor?.cancel()
             player?.pause()
             player = nil
             playerItem = nil
             hlsLoader = nil
         }
-        .onChange(of: playerItem?.status) { _, status in
-            guard status == .failed else { return }
-            message = playerItem?.error?.localizedDescription ?? "The video stream could not be decoded."
+        .task(id: playerItem) {
+            guard let item = playerItem, let player else { return }
+            playbackMonitor?.cancel()
+            playbackMonitor = Task { @MainActor in
+                for _ in 0..<30 {
+                    guard !Task.isCancelled else { return }
+                    if item.status == .failed {
+                        message = playbackError(for: item)
+                        return
+                    }
+                    if player.status == .failed {
+                        message = player.error?.localizedDescription ?? "The player failed to load this stream."
+                        return
+                    }
+                    try? await Task.sleep(for: .milliseconds(500))
+                }
+
+                // A ready item that never advances is indistinguishable from a black
+                // surface to the user. Surface the underlying AVFoundation diagnostics.
+                if item.status != .readyToPlay || player.timeControlStatus != .playing {
+                    message = playbackError(for: item)
+                }
+            }
+            await playbackMonitor?.value
         }
+    }
+
+    private func playbackError(for item: AVPlayerItem) -> String {
+        if let error = item.error?.localizedDescription {
+            return error
+        }
+        if let event = item.errorLog()?.events.last {
+            return "HTTP \(event.errorStatusCode): \(event.errorComment ?? "The stream could not be loaded.")"
+        }
+        return "The stream did not become playable on Apple TV."
     }
 }

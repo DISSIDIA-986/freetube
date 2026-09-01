@@ -7,6 +7,8 @@ struct TVRootView: View {
     @State private var selectedCollection: TVCollection?
     @State private var selectedTab = 0
     @FocusState private var searchFocused: Bool
+    @Namespace private var homeFocusNamespace
+    @State private var prefersSearchFocus = true
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -49,6 +51,8 @@ struct TVRootView: View {
                     Label(account.title, systemImage: "person.crop.circle.fill")
                         .foregroundStyle(.secondary)
                 }
+            }
+            HStack(spacing: 18) {
                 TextField("Search YouTube", text: Bindable(model).query)
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 18)
@@ -56,22 +60,27 @@ struct TVRootView: View {
                     .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
                     .frame(width: 520)
                     .focused($searchFocused)
+                    .prefersDefaultFocus(prefersSearchFocus, in: homeFocusNamespace)
                     .onSubmit {
                         searchFocused = false
+                        prefersSearchFocus = false
                         Task { await model.search() }
                     }
                 if model.isShowingSearchResults {
                     Button("New Search") {
                         model.resetToHome()
+                        prefersSearchFocus = true
                         searchFocused = true
                     }
                 } else if !model.query.isEmpty {
                     Button("Clear") {
                         model.resetToHome()
                         searchFocused = false
+                        prefersSearchFocus = false
                     }
                 }
             }
+            .focusSection()
             if model.isLoading {
                 ProgressView("Searching…")
             } else if let errorMessage = model.errorMessage {
@@ -109,6 +118,9 @@ struct TVRootView: View {
                 await model.loadCloudLibrary()
             }
             await model.syncHistoryToGateway()
+        }
+        .onAppear {
+            prefersSearchFocus = true
         }
     }
 

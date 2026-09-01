@@ -9,6 +9,7 @@ final class TVCatalogModel {
     var query = ""
     private(set) var homeVideos: [TVVideo] = []
     private(set) var videos: [TVVideo] = []
+    private(set) var collections: [TVCollection] = []
     private(set) var isLoading = false
     private(set) var isShowingSearchResults = false
     var errorMessage: String?
@@ -110,9 +111,39 @@ final class TVCatalogModel {
                 guard let video = result as? YTVideo else { return nil }
                 return makeVideo(from: video)
             }
+            collections = response.results.compactMap { result in
+                if let channel = result as? YTChannel {
+                    return TVCollection(id: channel.channelId, title: channel.name ?? "Channel", subtitle: "Channel", thumbnailURL: channel.thumbnails.last?.url, kind: .channel)
+                }
+                if let playlist = result as? YTPlaylist {
+                    return TVCollection(id: playlist.playlistId, title: playlist.title ?? "Playlist", subtitle: "Playlist", thumbnailURL: playlist.thumbnails.last?.url, kind: .playlist)
+                }
+                return nil
+            }
             if videos.isEmpty { errorMessage = "No videos found." }
         } catch {
             errorMessage = TVCatalogError.requestFailed.localizedDescription
+        }
+    }
+
+    func loadCollection(_ collection: TVCollection) async throws -> [TVVideo] {
+        switch collection.kind {
+        case .playlist:
+            let response = try await PlaylistInfosResponse.sendThrowingRequest(
+                youtubeModel: youtube,
+                data: [.browseId: collection.id]
+            )
+            return response.results.map(makeVideo(from:))
+        case .channel:
+            let response = try await ChannelInfosResponse.sendThrowingRequest(
+                youtubeModel: youtube,
+                data: [.browseId: collection.id]
+            )
+            guard let videos = response.currentContent as? ChannelInfosResponse.Videos else { return [] }
+            return videos.items.compactMap { result in
+                guard let video = result as? YTVideo else { return nil }
+                return makeVideo(from: video)
+            }
         }
     }
 
@@ -121,6 +152,7 @@ final class TVCatalogModel {
     func resetToHome() {
         query = ""
         videos = []
+        collections = []
         isShowingSearchResults = false
         errorMessage = nil
     }

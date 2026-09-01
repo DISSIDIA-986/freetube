@@ -4,6 +4,7 @@ struct TVRootView: View {
     @Environment(TVCatalogModel.self) private var model
     @Environment(TVLibraryStore.self) private var library
     @State private var selectedVideo: TVVideo?
+    @State private var selectedCollection: TVCollection?
     @State private var selectedTab = 0
 
     var body: some View {
@@ -24,6 +25,12 @@ struct TVRootView: View {
         }
         .fullScreenCover(item: $selectedVideo) { video in
             TVVideoDetailView(video: video)
+        }
+        .sheet(item: $selectedCollection) { collection in
+            TVCollectionView(collection: collection) { video in
+                selectedCollection = nil
+                selectedVideo = video
+            }
         }
         .onExitCommand {
             if selectedTab != 0 {
@@ -54,6 +61,9 @@ struct TVRootView: View {
                     Button("Retry") { Task { await model.reloadHome() } }
                 }
             } else if model.isShowingSearchResults {
+                if !model.collections.isEmpty {
+                    TVCollectionShelf(collections: model.collections) { selectedCollection = $0 }
+                }
                 TVVideoShelf(title: "Search results", videos: model.videos) { selectedVideo = $0 }
             } else if model.homeVideos.isEmpty {
                 ContentUnavailableView("Loading the home feed", systemImage: "play.rectangle", description: Text("FreeTube TV is fetching anonymous recommendations."))
@@ -131,6 +141,90 @@ private struct TVVideoShelf: View {
                     }
                 }
                 .padding(.vertical, 20)
+            }
+        }
+    }
+}
+
+private struct TVCollectionShelf: View {
+    let collections: [TVCollection]
+    let onSelect: (TVCollection) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Channels & Playlists").font(.title2.bold())
+            ScrollView(.horizontal) {
+                HStack(spacing: 22) {
+                    ForEach(collections) { collection in
+                        Button { onSelect(collection) } label: {
+                            VStack(alignment: .leading, spacing: 8) {
+                                AsyncImage(url: collection.thumbnailURL) { image in
+                                    image.resizable().scaledToFill()
+                                } placeholder: {
+                                    RoundedRectangle(cornerRadius: 10).fill(.gray.opacity(0.35))
+                                }
+                                .frame(width: 260, height: 146)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                Text(collection.title).font(.headline).lineLimit(2)
+                                Text(collection.subtitle).foregroundStyle(.secondary)
+                            }
+                            .frame(width: 260, alignment: .leading)
+                        }
+                        .buttonStyle(.card)
+                    }
+                }
+                .padding(.vertical, 10)
+            }
+        }
+    }
+}
+
+private struct TVCollectionView: View {
+    @Environment(TVCatalogModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    let collection: TVCollection
+    let onSelect: (TVVideo) -> Void
+    @State private var videos: [TVVideo] = []
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let errorMessage {
+                    ContentUnavailableView("Unable to load collection", systemImage: "wifi.exclamationmark", description: Text(errorMessage))
+                } else if videos.isEmpty {
+                    ProgressView("Loading \(collection.title)…")
+                } else {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 20) {
+                            ForEach(videos) { video in
+                                Button { onSelect(video) } label: {
+                                    HStack(spacing: 20) {
+                                        AsyncImage(url: video.thumbnailURL) { image in
+                                            image.resizable().scaledToFill()
+                                        } placeholder: {
+                                            Rectangle().fill(.gray.opacity(0.35))
+                                        }
+                                        .frame(width: 300, height: 169)
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text(video.title).font(.headline).lineLimit(3)
+                                            Text(video.channel).foregroundStyle(.secondary)
+                                        }
+                                    }
+                                }
+                                .buttonStyle(.card)
+                            }
+                        }
+                        .padding(60)
+                    }
+                }
+            }
+            .navigationTitle(collection.title)
+            .toolbar { Button("Done") { dismiss() } }
+            .task {
+                do { videos = try await model.loadCollection(collection) }
+                catch { errorMessage = error.localizedDescription }
             }
         }
     }

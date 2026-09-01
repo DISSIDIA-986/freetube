@@ -34,6 +34,15 @@ enum TVRegionProfile: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+struct TVCollection: Identifiable, Hashable, Codable, Sendable {
+    enum Kind: String, Codable, Sendable { case channel, playlist }
+    let id: String
+    let title: String
+    let subtitle: String
+    let thumbnailURL: URL?
+    let kind: Kind
+}
+
 enum TVCatalogError: LocalizedError, Equatable {
     case emptyQuery
     case noPlayableStream

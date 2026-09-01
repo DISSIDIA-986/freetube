@@ -2,6 +2,7 @@ import AVKit
 import SwiftUI
 
 struct TVVideoDetailView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(TVCatalogModel.self) private var model
     @Environment(TVLibraryStore.self) private var library
     let video: TVVideo
@@ -30,10 +31,24 @@ struct TVVideoDetailView: View {
                 }
                 .padding(80)
             }
+
+            VStack {
+                HStack {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Label("Back", systemImage: "chevron.left")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    Spacer()
+                }
+                .padding(.top, 36)
+                .padding(.leading, 48)
+                Spacer()
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.black)
-        .toolbar(.hidden, for: .navigationBar)
         .task {
             do {
                 let source = try await model.playbackSource(for: video)

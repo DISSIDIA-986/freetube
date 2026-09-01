@@ -10,23 +10,20 @@ struct TVRootView: View {
         TabView(selection: $selectedTab) {
             NavigationStack {
                 homeView
-                    .navigationDestination(item: $selectedVideo) { video in
-                        TVVideoDetailView(video: video)
-                    }
             }
                 .tabItem { Label("Home", systemImage: "house.fill") }
                 .tag(0)
             NavigationStack {
                 libraryView
-                    .navigationDestination(item: $selectedVideo) { video in
-                        TVVideoDetailView(video: video)
-                    }
             }
                 .tabItem { Label("Library", systemImage: "play.square.stack") }
                 .tag(1)
             NavigationStack { settingsView }
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
                 .tag(2)
+        }
+        .fullScreenCover(item: $selectedVideo) { video in
+            TVVideoDetailView(video: video)
         }
     }
 

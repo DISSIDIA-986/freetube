@@ -78,6 +78,9 @@ struct TVRootView: View {
                         Task { await model.search() }
                     }
                 }
+                if !model.subscriptionVideos.isEmpty {
+                    TVVideoShelf(title: "From your subscriptions", videos: model.subscriptionVideos) { selectedVideo = $0 }
+                }
                 TVVideoShelf(title: "Trending now", videos: model.homeVideos) { selectedVideo = $0 }
                 Text("Search YouTube for more videos").foregroundStyle(.secondary)
             }
@@ -86,7 +89,7 @@ struct TVRootView: View {
         .padding(60)
         .task {
             await model.loadHome()
-            _ = await model.loadGatewayAccount()
+            if await model.loadGatewayAccount() { await model.loadGatewaySubscriptions() }
         }
     }
 

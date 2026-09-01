@@ -8,6 +8,7 @@ final class TVCatalogModel {
     private static let regionDefaultsKey = "tv.freetube.region.v2"
     var query = ""
     private(set) var homeVideos: [TVVideo] = []
+    private(set) var subscriptionVideos: [TVVideo] = []
     private(set) var videos: [TVVideo] = []
     private(set) var collections: [TVCollection] = []
     private(set) var isLoading = false
@@ -104,6 +105,16 @@ final class TVCatalogModel {
             account = TVAccount(title: title, channelID: channelID, thumbnailURL: result.thumbnailURL)
             return true
         } catch { return false }
+    }
+
+    func loadGatewaySubscriptions() async {
+        guard let base = gatewayBaseURL else { return }
+        do {
+            let (data, response) = try await URLSession.shared.data(from: base.appendingPathComponent("subscriptions"))
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
+            let result = try JSONDecoder().decode(SubscriptionsResponse.self, from: data)
+            subscriptionVideos = result.videos.map { TVVideo(id: $0.id, title: $0.title, channel: $0.channel, thumbnailURL: $0.thumbnailURL, duration: "") }
+        } catch { subscriptionVideos = [] }
     }
 
     func loadHome() async {
@@ -373,5 +384,16 @@ private struct AccountResponse: Decodable {
     let signedIn: Bool
     let title: String?
     let channelID: String?
+    let thumbnailURL: URL?
+}
+
+private struct SubscriptionsResponse: Decodable {
+    let videos: [SubscriptionVideo]
+}
+
+private struct SubscriptionVideo: Decodable {
+    let id: String
+    let title: String
+    let channel: String
     let thumbnailURL: URL?
 }

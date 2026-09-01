@@ -84,7 +84,12 @@ final class TVHLSResourceLoader: NSObject, AVAssetResourceLoaderDelegate {
             if let info = loadingRequest.contentInformationRequest {
                 info.contentType = http.mimeType ?? (isPlaylist ? "application/x-mpegURL" : "video/mp4")
                 info.isByteRangeAccessSupported = !isPlaylist
-                info.contentLength = Int64(output.count)
+                if let contentRange = http.value(forHTTPHeaderField: "Content-Range"),
+                   let total = contentRange.split(separator: "/").last.flatMap({ Int64($0) }) {
+                    info.contentLength = total
+                } else {
+                    info.contentLength = Int64(output.count)
+                }
             }
             loadingRequest.dataRequest?.respond(with: output)
             loadingRequest.finishLoading()

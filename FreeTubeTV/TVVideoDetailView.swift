@@ -29,25 +29,19 @@ struct TVVideoDetailView: View {
         .task {
             do {
                 let url = try await model.streamURL(for: video)
-                if url.pathExtension.lowercased() == "m3u8" || url.absoluteString.contains(".m3u8") {
-                    let loader = TVHLSResourceLoader()
-                    hlsLoader = loader
-                    guard let rewrittenURL = TVHLSResourceLoader.rewrite(url) else {
-                        throw TVCatalogError.noPlayableStream
-                    }
-                    let asset = AVURLAsset(url: rewrittenURL)
-                    asset.resourceLoader.setDelegate(loader, queue: .main)
-                    let item = AVPlayerItem(asset: asset)
-                    playerItem = item
-                    player = AVPlayer(playerItem: item)
-                } else {
-                    let asset = AVURLAsset(url: url, options: ["AVURLAssetHTTPHeaderFieldsKey": [
-                        "User-Agent": "Mozilla/5.0 (AppleTV; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15"
-                    ]])
-                    let item = AVPlayerItem(asset: asset)
-                    playerItem = item
-                    player = AVPlayer(playerItem: item)
+                // Route both HLS and progressive MP4 through the same loader. AVPlayer's
+                // direct MP4 requests use its own User-Agent and are rejected by YouTube's
+                // CDN with HTTP 403 even though the signed URL works with our URLSession.
+                let loader = TVHLSResourceLoader()
+                hlsLoader = loader
+                guard let rewrittenURL = TVHLSResourceLoader.rewrite(url) else {
+                    throw TVCatalogError.noPlayableStream
                 }
+                let asset = AVURLAsset(url: rewrittenURL)
+                asset.resourceLoader.setDelegate(loader, queue: .main)
+                let item = AVPlayerItem(asset: asset)
+                playerItem = item
+                player = AVPlayer(playerItem: item)
                 player?.automaticallyWaitsToMinimizeStalling = false
                 player?.play()
             } catch {
@@ -67,7 +61,9 @@ struct TVVideoDetailView: View {
             playbackMonitor = Task { @MainActor in
                 for _ in 0..<30 {
                     guard !Task.isCancelled else { return }
+                    print("FreeTubeTV player: item=\(item.status.rawValue) player=\(player.status.rawValue) time=\(player.timeControlStatus.rawValue) error=\(String(describing: item.error))")
                     if item.status == .failed {
+                        print("FreeTubeTV player error log: \(String(describing: item.errorLog()?.events.map { [$0.errorStatusCode, $0.errorDomain, $0.errorComment ?? ""] }))")
                         message = playbackError(for: item)
                         return
                     }

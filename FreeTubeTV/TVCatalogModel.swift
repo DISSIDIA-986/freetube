@@ -72,13 +72,18 @@ final class TVCatalogModel {
     }
 
     func streamURL(for video: TVVideo) async throws -> URL {
+        print("FreeTubeTV playback: resolving \(video.id)")
         do {
             let response = try await VideoInfosResponse.sendThrowingRequest(
                 youtubeModel: youtube,
                 data: [.query: video.id]
             )
+            print("FreeTubeTV playback: base response hls=\(response.streamingURL != nil) default=\(response.defaultFormats.count)")
             let hlsURL = response.streamingURL
-            if let progressive = progressiveURL(from: response.defaultFormats) { return progressive }
+            if let progressive = progressiveURL(from: response.defaultFormats) {
+                print("FreeTubeTV playback: selected base progressive MP4 \(progressive.absoluteString)")
+                return progressive
+            }
 
             // VideoInfosResponse often returns format metadata without signed URLs. The
             // download-format response runs YouTubeKit's URL deciphering path and usually
@@ -93,14 +98,26 @@ final class TVCatalogModel {
                 if let player = detailed.videoInfos.player {
                     try? detailed.deciphersURLs(player: player)
                 }
-                if let progressive = progressiveURL(from: detailed.defaultFormats) { return progressive }
-                if let progressive = progressiveURL(from: detailed.downloadFormats) { return progressive }
+                print("FreeTubeTV playback: detailed default=\(detailed.defaultFormats.count) download=\(detailed.downloadFormats.count)")
+                if let progressive = progressiveURL(from: detailed.defaultFormats) {
+                    print("FreeTubeTV playback: selected detailed default MP4 \(progressive.absoluteString)")
+                    return progressive
+                }
+                if let progressive = progressiveURL(from: detailed.downloadFormats) {
+                    print("FreeTubeTV playback: selected detailed download MP4 \(progressive.absoluteString)")
+                    return progressive
+                }
             }
-            if let hlsURL { return hlsURL }
+            if let hlsURL {
+                print("FreeTubeTV playback: falling back to HLS")
+                return hlsURL
+            }
             throw TVCatalogError.noPlayableStream
         } catch let error as TVCatalogError {
+            print("FreeTubeTV playback: catalog error \(String(reflecting: error))")
             throw error
         } catch {
+            print("FreeTubeTV playback: resolver error \(String(reflecting: error))")
             // Keep the YouTubeKit error intact. Converting it to a generic requestFailed
             // error hides cipher/player/network failures and makes tvOS playback impossible
             // to diagnose from the device.

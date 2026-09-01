@@ -6,6 +6,7 @@ struct TVRootView: View {
     @State private var selectedVideo: TVVideo?
     @State private var selectedCollection: TVCollection?
     @State private var selectedTab = 0
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -54,8 +55,22 @@ struct TVRootView: View {
                     .padding(.vertical, 12)
                     .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
                     .frame(width: 520)
-                    .onSubmit { Task { await model.search() } }
-                if !model.query.isEmpty { Button("Clear") { model.resetToHome() } }
+                    .focused($searchFocused)
+                    .onSubmit {
+                        searchFocused = false
+                        Task { await model.search() }
+                    }
+                if model.isShowingSearchResults {
+                    Button("New Search") {
+                        model.resetToHome()
+                        searchFocused = true
+                    }
+                } else if !model.query.isEmpty {
+                    Button("Clear") {
+                        model.resetToHome()
+                        searchFocused = false
+                    }
+                }
             }
             if model.isLoading {
                 ProgressView("Searching…")
@@ -89,7 +104,11 @@ struct TVRootView: View {
         .padding(60)
         .task {
             await model.loadHome()
-            if await model.loadGatewayAccount() { await model.loadGatewaySubscriptions() }
+            if await model.loadGatewayAccount() {
+                await model.loadGatewaySubscriptions()
+                await model.loadCloudLibrary()
+            }
+            await model.syncHistoryToGateway()
         }
     }
 
@@ -110,6 +129,12 @@ struct TVRootView: View {
                     TVVideoShelf(title: "Recently watched", videos: library.history) { selectedVideo = $0 }
                 } else {
                     Text("Your watch history will appear here after playback.").foregroundStyle(.secondary)
+                }
+                if !model.likedVideos.isEmpty {
+                    TVVideoShelf(title: "YouTube liked videos", videos: model.likedVideos) { selectedVideo = $0 }
+                }
+                if !model.cloudPlaylists.isEmpty {
+                    TVCollectionShelf(collections: model.cloudPlaylists) { selectedCollection = $0 }
                 }
             }
             .padding(60)

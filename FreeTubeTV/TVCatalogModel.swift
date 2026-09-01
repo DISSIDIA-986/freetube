@@ -9,6 +9,8 @@ final class TVCatalogModel {
     var query = ""
     private(set) var homeVideos: [TVVideo] = []
     private(set) var subscriptionVideos: [TVVideo] = []
+    private(set) var likedVideos: [TVVideo] = []
+    private(set) var cloudPlaylists: [TVCollection] = []
     private(set) var videos: [TVVideo] = []
     private(set) var collections: [TVCollection] = []
     private(set) var isLoading = false
@@ -115,6 +117,35 @@ final class TVCatalogModel {
             let result = try JSONDecoder().decode(SubscriptionsResponse.self, from: data)
             subscriptionVideos = result.videos.map { TVVideo(id: $0.id, title: $0.title, channel: $0.channel, thumbnailURL: $0.thumbnailURL, duration: "") }
         } catch { subscriptionVideos = [] }
+    }
+
+    func loadCloudLibrary() async {
+        guard let base = gatewayBaseURL else { return }
+        do {
+            async let likesRequest = URLSession.shared.data(from: base.appendingPathComponent("likes"))
+            async let playlistsRequest = URLSession.shared.data(from: base.appendingPathComponent("playlists"))
+            let (likesData, likesResponse) = try await likesRequest
+            let (playlistData, playlistResponse) = try await playlistsRequest
+            if (likesResponse as? HTTPURLResponse)?.statusCode == 200 {
+                let result = try JSONDecoder().decode(VideoListResponse.self, from: likesData)
+                likedVideos = result.videos.map { TVVideo(id: $0.id, title: $0.title, channel: $0.channel, thumbnailURL: $0.thumbnailURL, duration: "") }
+            }
+            if (playlistResponse as? HTTPURLResponse)?.statusCode == 200 {
+                let result = try JSONDecoder().decode(PlaylistListResponse.self, from: playlistData)
+                cloudPlaylists = result.playlists.map { TVCollection(id: $0.id, title: $0.title, subtitle: "\($0.count) videos", thumbnailURL: $0.thumbnailURL, kind: .playlist) }
+            }
+        } catch { }
+    }
+
+    func syncHistoryToGateway() async {
+        guard let base = gatewayBaseURL, let history = libraryStore?.history else { return }
+        do {
+            var request = URLRequest(url: base.appendingPathComponent("sync/history"))
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONEncoder().encode(["videos": history])
+            _ = try await URLSession.shared.data(for: request)
+        } catch { }
     }
 
     func loadHome() async {
@@ -395,5 +426,18 @@ private struct SubscriptionVideo: Decodable {
     let id: String
     let title: String
     let channel: String
+    let thumbnailURL: URL?
+}
+
+private typealias VideoListResponse = SubscriptionsResponse
+
+private struct PlaylistListResponse: Decodable {
+    let playlists: [CloudPlaylist]
+}
+
+private struct CloudPlaylist: Decodable {
+    let id: String
+    let title: String
+    let count: Int
     let thumbnailURL: URL?
 }

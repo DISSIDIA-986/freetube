@@ -16,6 +16,7 @@ const auth = { accessToken: null, refreshToken: null, expiresAt: 0 };
 const googleClientID = process.env.FREETUBE_GOOGLE_CLIENT_ID ?? "";
 const oauthRedirectURI = process.env.FREETUBE_GOOGLE_REDIRECT_URI ?? `http://127.0.0.1:${port}/oauth/callback`;
 const authFile = join(process.cwd(), ".gateway-auth.json");
+const historyFile = join(process.cwd(), ".gateway-history.json");
 try {
   if (existsSync(authFile)) auth.refreshToken = JSON.parse(readFileSync(authFile, "utf8")).refreshToken ?? null;
 } catch (error) { console.error("[gateway] unable to read auth state", error.message); }
@@ -24,6 +25,16 @@ function saveAuth() {
   if (!auth.refreshToken) return;
   writeFileSync(authFile, JSON.stringify({ refreshToken: auth.refreshToken }), { mode: 0o600 });
   chmodSync(authFile, 0o600);
+}
+
+function readHistory() {
+  try { return JSON.parse(readFileSync(historyFile, "utf8")); } catch { return []; }
+}
+
+async function requestBody(req) {
+  let body = "";
+  for await (const chunk of req) body += chunk;
+  return JSON.parse(body || "{}");
 }
 
 function videoPath(id) { return join(cacheDir, `${id}.mp4`); }
@@ -194,6 +205,30 @@ const server = http.createServer(async (req, res) => {
         const videos = pages.flatMap(page => (page?.items ?? []).map(item => ({ id: item.contentDetails?.videoId, title: item.snippet?.title ?? "", channel: item.snippet?.channelTitle ?? "", thumbnailURL: item.snippet?.thumbnails?.high?.url ?? item.snippet?.thumbnails?.default?.url ?? null }))).filter(item => item.id);
         return json(res, 200, { videos });
       } catch (error) { return json(res, 401, { error: String(error.message ?? error) }); }
+    }
+    if (url.pathname === "/playlists" && req.method === "GET") {
+      try {
+        const result = await youtubeAPI("playlists?part=snippet,contentDetails&mine=true&maxResults=50");
+        if (!result) return json(res, 401, { error: "YouTube account is not connected" });
+        return json(res, 200, { playlists: (result.items ?? []).map(item => ({ id: item.id, title: item.snippet?.title ?? "", count: item.contentDetails?.itemCount ?? 0, thumbnailURL: item.snippet?.thumbnails?.high?.url ?? item.snippet?.thumbnails?.default?.url ?? null })) });
+      } catch (error) { return json(res, 401, { error: String(error.message ?? error) }); }
+    }
+    if (url.pathname === "/likes" && req.method === "GET") {
+      try {
+        const result = await youtubeAPI("videos?part=snippet,contentDetails&myRating=like&maxResults=50");
+        if (!result) return json(res, 401, { error: "YouTube account is not connected" });
+        return json(res, 200, { videos: (result.items ?? []).map(item => ({ id: item.id, title: item.snippet?.title ?? "", channel: item.snippet?.channelTitle ?? "", thumbnailURL: item.snippet?.thumbnails?.high?.url ?? item.snippet?.thumbnails?.default?.url ?? null })) });
+      } catch (error) { return json(res, 401, { error: String(error.message ?? error) }); }
+    }
+    if (url.pathname === "/sync/history" && req.method === "GET") return json(res, 200, { videos: readHistory() });
+    if (url.pathname === "/sync/history" && req.method === "POST") {
+      try {
+        const incoming = await requestBody(req);
+        const merged = [...incoming.videos ?? [], ...readHistory()].filter((video, index, all) => video?.id && all.findIndex(item => item.id === video.id) === index).slice(0, 100);
+        writeFileSync(historyFile, JSON.stringify(merged), { mode: 0o600 });
+        chmodSync(historyFile, 0o600);
+        return json(res, 200, { videos: merged });
+      } catch (error) { return json(res, 400, { error: String(error.message ?? error) }); }
     }
     if (url.pathname === "/pair" && req.method === "GET") {
       const page = pairPage();

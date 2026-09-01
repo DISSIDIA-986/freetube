@@ -78,3 +78,4 @@ Thumbs.db
 *.mov
 *.wmv
 .gateway-auth.json
+.gateway-history.json

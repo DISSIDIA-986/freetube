@@ -106,6 +106,17 @@ final class TVLibraryStoreTests: XCTestCase {
         XCTAssertLessThanOrEqual(diagnostics.incidents.first?.error?.count ?? 0, 300)
     }
 
+    func testAppStatePersistsAndClampsSelectedTab() {
+        let suite = UserDefaults(suiteName: "TVAppStateTests-\(UUID().uuidString)")!
+        let state = TVAppState(defaults: suite)
+        state.selectedTab = 2
+        XCTAssertEqual(TVAppState(defaults: suite).selectedTab, 2)
+        state.selectedTab = 99
+        XCTAssertEqual(state.selectedTab, 2)
+        state.selectedTab = -1
+        XCTAssertEqual(state.selectedTab, 0)
+    }
+
     private func makeVideo(id: String, publishedRelative: String? = nil) -> TVVideo {
         TVVideo(id: id, title: "Title \(id)", channel: "Channel", thumbnailURL: nil, duration: "1:00", publishedRelative: publishedRelative)
     }

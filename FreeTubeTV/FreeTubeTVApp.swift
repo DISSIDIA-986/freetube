@@ -5,6 +5,7 @@ struct FreeTubeTVApp: App {
     @State private var model = TVCatalogModel()
     @State private var library = TVLibraryStore()
     @State private var diagnostics = TVPlaybackDiagnostics()
+    @State private var appState = TVAppState()
 
     init() {
         URLCache.shared = URLCache(
@@ -20,6 +21,7 @@ struct FreeTubeTVApp: App {
                 .environment(model)
                 .environment(library)
                 .environment(diagnostics)
+                .environment(appState)
                 .task { model.libraryStore = library }
                 .preferredColorScheme(.dark)
         }

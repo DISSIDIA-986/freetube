@@ -279,19 +279,23 @@ final class TVCatalogModel {
             }
             return response.results.map(makeVideo(from:))
         case .channel:
-            var response = try await ChannelInfosResponse.sendThrowingRequest(
+            let channel = try await ChannelInfosResponse.sendThrowingRequest(
                 youtubeModel: youtube,
                 data: [.browseId: collection.id]
             )
-            while response.channelContentContinuationStore[.videos] != nil {
+            var response = try await channel.getChannelContentReusingCacheThrowing(
+                forType: .videos,
+                youtubeModel: youtube
+            )
+            while response.channelContentContinuationStore[.videos] != nil,
+                  (response.channelContentStore[.videos] as? ChannelInfosResponse.Videos)?.items.count ?? 0 < 200 {
                 let continuation = try await response.getChannelContentContinuationThrowing(
                     ChannelInfosResponse.Videos.self,
                     youtubeModel: youtube
                 )
                 response.mergeListableChannelContentContinuation(continuation)
-                if response.channelContentStore[.videos] == nil { break }
             }
-            guard let videos = response.channelContentStore[.videos] as? ChannelInfosResponse.Videos ?? response.currentContent as? ChannelInfosResponse.Videos else { return [] }
+            guard let videos = response.channelContentStore[.videos] as? ChannelInfosResponse.Videos else { return [] }
             return videos.items.compactMap { result in
                 guard let video = result as? YTVideo else { return nil }
                 return makeVideo(from: video)

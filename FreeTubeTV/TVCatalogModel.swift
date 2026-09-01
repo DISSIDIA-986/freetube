@@ -20,7 +20,7 @@ final class TVCatalogModel {
     init() {
         let defaults = UserDefaults.standard
         gatewayHost = defaults.string(forKey: "tv.freetube.gatewayHost") ?? "192.168.1.79"
-        regionProfile = TVRegionProfile(rawValue: defaults.string(forKey: "tv.freetube.region") ?? "") ?? .chinaChinese
+        regionProfile = TVRegionProfile(rawValue: defaults.string(forKey: "tv.freetube.region") ?? "") ?? .northAmerica
         youtube.selectedLocale = regionProfile.rawValue
     }
 

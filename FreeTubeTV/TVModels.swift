@@ -28,7 +28,7 @@ enum TVRegionProfile: String, CaseIterable, Identifiable, Sendable {
 
     var discoveryQueries: [String] {
         switch self {
-        case .chinaChinese: return ["中文 热门 视频", "中文 音乐", "中国 科技", "Trending"]
+        case .chinaChinese: return ["中文 热门 视频", "中文 音乐", "中国 科技", "music", "Trending"]
         case .northAmerica: return ["US trending videos", "technology news", "music", "Trending"]
         }
     }

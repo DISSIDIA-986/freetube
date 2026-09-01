@@ -25,6 +25,11 @@ struct TVRootView: View {
         .fullScreenCover(item: $selectedVideo) { video in
             TVVideoDetailView(video: video)
         }
+        .onExitCommand {
+            if selectedTab != 0 {
+                selectedTab = 0
+            }
+        }
     }
 
     private var homeView: some View {

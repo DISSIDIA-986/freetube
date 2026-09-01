@@ -78,10 +78,7 @@ final class TVCatalogModel {
                 data: [.query: video.id]
             )
             let hlsURL = response.streamingURL
-            if let progressive = response.defaultFormats
-                .compactMap({ $0 as? VideoDownloadFormat })
-                .compactMap(\.url)
-                .first { return progressive }
+            if let progressive = progressiveURL(from: response.defaultFormats) { return progressive }
 
             // VideoInfosResponse often returns format metadata without signed URLs. The
             // download-format response runs YouTubeKit's URL deciphering path and usually
@@ -90,14 +87,8 @@ final class TVCatalogModel {
                 youtubeModel: youtube,
                 data: [.query: video.id]
             ) {
-                if let progressive = detailed.defaultFormats
-                    .compactMap({ $0 as? VideoDownloadFormat })
-                    .compactMap(\.url)
-                    .first { return progressive }
-                if let progressive = detailed.downloadFormats
-                    .compactMap({ $0 as? VideoDownloadFormat })
-                    .compactMap(\.url)
-                    .first { return progressive }
+                if let progressive = progressiveURL(from: detailed.defaultFormats) { return progressive }
+                if let progressive = progressiveURL(from: detailed.downloadFormats) { return progressive }
             }
             if let hlsURL { return hlsURL }
             throw TVCatalogError.noPlayableStream
@@ -118,6 +109,23 @@ final class TVCatalogModel {
             return makeVideo(from: video)
         }
         if homeVideos.isEmpty { throw TVCatalogError.requestFailed }
+    }
+
+    private func progressiveURL(from formats: [any AdaptiveDownloadFormat]) -> URL? {
+        let candidates = formats.compactMap { format -> (URL, Int, Bool)? in
+            guard let video = format as? VideoDownloadFormat, let url = video.url else { return nil }
+            let codec = video.codec?.lowercased() ?? ""
+            let isH264 = codec.contains("avc1") || codec.contains("avc")
+            let knownIncompatible = codec.contains("vp9") || codec.contains("vp09") || codec.contains("av01")
+            return (url, video.height ?? 0, isH264 && !knownIncompatible)
+        }
+
+        // Prefer H.264/AAC MP4. YouTube often orders VP9/AV1 first, but those streams can
+        // produce a black AVPlayer surface on tvOS even though the URL itself is valid.
+        return candidates
+            .filter { $0.2 }
+            .sorted { $0.1 > $1.1 }
+            .first?.0
     }
 
     private func makeVideo(from video: YTVideo) -> TVVideo {

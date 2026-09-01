@@ -9,6 +9,7 @@ struct TVVideoDetailView: View {
     @State private var hlsLoader: TVHLSResourceLoader?
     @State private var message: String?
     @State private var playbackMonitor: Task<Void, Never>?
+    @State private var localPlaybackURL: URL?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -57,7 +58,23 @@ struct TVVideoDetailView: View {
                     }
                     try compositionVideo.insertTimeRange(range, of: videoTrack, at: .zero)
                     try compositionAudio.insertTimeRange(range, of: audioTrack, at: .zero)
-                    playbackAsset = composition
+                    // tvOS can inspect the remote tracks but AVPlayer may reject the remote
+                    // composition itself with -11828. Materialize the muxed MP4 first, matching
+                    // the original FreeTube download path and avoiding remote composition playback.
+                    let outputURL = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("freetube-\(video.id)-\(UUID().uuidString).mp4")
+                    guard let exporter = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetPassthrough),
+                          exporter.supportedFileTypes.contains(.mp4) else {
+                        throw TVCatalogError.noPlayableStream
+                    }
+                    exporter.outputURL = outputURL
+                    exporter.outputFileType = .mp4
+                    await exporter.export()
+                    guard exporter.status == .completed else {
+                        throw exporter.error ?? TVCatalogError.noPlayableStream
+                    }
+                    localPlaybackURL = outputURL
+                    playbackAsset = AVURLAsset(url: outputURL)
                 } else {
                     playbackAsset = videoAsset
                 }
@@ -76,6 +93,10 @@ struct TVVideoDetailView: View {
             player = nil
             playerItem = nil
             hlsLoader = nil
+            if let localPlaybackURL {
+                try? FileManager.default.removeItem(at: localPlaybackURL)
+            }
+            localPlaybackURL = nil
         }
         .task(id: playerItem) {
             guard let item = playerItem, let player else { return }

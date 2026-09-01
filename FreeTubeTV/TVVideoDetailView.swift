@@ -16,7 +16,7 @@ struct TVVideoDetailView: View {
             if let message {
                 ContentUnavailableView("Playback unavailable", systemImage: "play.slash", description: Text(message))
             } else if let player {
-                VideoPlayer(player: player)
+                TVPlayerSurface(player: player)
                     .frame(maxWidth: .infinity, minHeight: 520)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
             } else {
@@ -47,6 +47,7 @@ struct TVVideoDetailView: View {
                     playerItem = item
                     player = AVPlayer(playerItem: item)
                 }
+                player?.automaticallyWaitsToMinimizeStalling = false
                 player?.play()
             } catch {
                 message = error.localizedDescription

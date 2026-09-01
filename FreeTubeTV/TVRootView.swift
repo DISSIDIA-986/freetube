@@ -3,15 +3,15 @@ import SwiftUI
 struct TVRootView: View {
     @Environment(TVCatalogModel.self) private var model
     @Environment(TVLibraryStore.self) private var library
+    @Environment(TVAppState.self) private var appState
     @State private var selectedVideo: TVVideo?
     @State private var selectedCollection: TVCollection?
-    @State private var selectedTab = 0
     @FocusState private var searchFocused: Bool
     @Namespace private var homeFocusNamespace
     @State private var prefersSearchFocus = true
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: Bindable(appState).selectedTab) {
             NavigationStack {
                 homeView
             }
@@ -36,8 +36,8 @@ struct TVRootView: View {
             }
         }
         .onExitCommand {
-            if selectedTab != 0 {
-                selectedTab = 0
+            if appState.selectedTab != 0 {
+                appState.selectedTab = 0
             }
         }
     }
@@ -168,7 +168,7 @@ struct TVRootView: View {
     }
 
     private var settingsView: some View {
-        TVSettingsView(onReturnHome: { selectedTab = 0 })
+        TVSettingsView(onReturnHome: { appState.selectedTab = 0 })
     }
 }
 

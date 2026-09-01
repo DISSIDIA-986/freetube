@@ -1,7 +1,7 @@
 import http from "node:http";
 import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, statSync, createReadStream } from "node:fs";
+import { existsSync, mkdirSync, statSync, createReadStream, readFileSync, writeFileSync, chmodSync } from "node:fs";
 import { join } from "node:path";
 import { URL } from "node:url";
 
@@ -15,6 +15,16 @@ const oauthStates = new Map();
 const auth = { accessToken: null, refreshToken: null, expiresAt: 0 };
 const googleClientID = process.env.FREETUBE_GOOGLE_CLIENT_ID ?? "";
 const oauthRedirectURI = process.env.FREETUBE_GOOGLE_REDIRECT_URI ?? `http://127.0.0.1:${port}/oauth/callback`;
+const authFile = join(process.cwd(), ".gateway-auth.json");
+try {
+  if (existsSync(authFile)) auth.refreshToken = JSON.parse(readFileSync(authFile, "utf8")).refreshToken ?? null;
+} catch (error) { console.error("[gateway] unable to read auth state", error.message); }
+
+function saveAuth() {
+  if (!auth.refreshToken) return;
+  writeFileSync(authFile, JSON.stringify({ refreshToken: auth.refreshToken }), { mode: 0o600 });
+  chmodSync(authFile, 0o600);
+}
 
 function videoPath(id) { return join(cacheDir, `${id}.mp4`); }
 
@@ -99,6 +109,7 @@ async function exchangeOAuthCode(code, verifier) {
   auth.accessToken = result.access_token;
   auth.refreshToken = result.refresh_token ?? auth.refreshToken;
   auth.expiresAt = Date.now() + (result.expires_in ?? 3600) * 1000;
+  saveAuth();
 }
 
 async function accessToken() {
@@ -173,9 +184,14 @@ const server = http.createServer(async (req, res) => {
     }
     if (url.pathname === "/subscriptions" && req.method === "GET") {
       try {
-        const result = await youtubeAPI("activities?part=snippet,contentDetails&home=true&maxResults=50");
-        if (!result) return json(res, 401, { error: "YouTube account is not connected" });
-        const videos = (result?.items ?? []).filter(item => item.contentDetails?.upload?.videoId).map(item => ({ id: item.contentDetails.upload.videoId, title: item.snippet?.title ?? "", channel: item.snippet?.channelTitle ?? "", thumbnailURL: item.snippet?.thumbnails?.high?.url ?? item.snippet?.thumbnails?.default?.url ?? null }));
+        const subscriptions = await youtubeAPI("subscriptions?part=snippet,contentDetails&mine=true&maxResults=50");
+        if (!subscriptions) return json(res, 401, { error: "YouTube account is not connected" });
+        const channelIDs = (subscriptions.items ?? []).map(item => item.snippet?.resourceId?.channelId).filter(Boolean);
+        if (!channelIDs.length) return json(res, 200, { videos: [] });
+        const channels = await youtubeAPI(`channels?part=contentDetails&id=${channelIDs.join(",")}&maxResults=50`);
+        const playlistIDs = (channels?.items ?? []).map(item => item.contentDetails?.relatedPlaylists?.uploads).filter(Boolean);
+        const pages = await Promise.all(playlistIDs.slice(0, 20).map(playlistID => youtubeAPI(`playlistItems?part=snippet,contentDetails&playlistId=${playlistID}&maxResults=5`)));
+        const videos = pages.flatMap(page => (page?.items ?? []).map(item => ({ id: item.contentDetails?.videoId, title: item.snippet?.title ?? "", channel: item.snippet?.channelTitle ?? "", thumbnailURL: item.snippet?.thumbnails?.high?.url ?? item.snippet?.thumbnails?.default?.url ?? null }))).filter(item => item.id);
         return json(res, 200, { videos });
       } catch (error) { return json(res, 401, { error: String(error.message ?? error) }); }
     }

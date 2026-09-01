@@ -77,6 +77,10 @@ struct TVRootView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 36) {
                 Text("Library").font(.largeTitle.bold())
+                let continueVideos = library.history.filter { library.progress(for: $0) != nil }
+                if !continueVideos.isEmpty {
+                    TVVideoShelf(title: "Continue Watching", videos: continueVideos) { selectedVideo = $0 }
+                }
                 if !library.favorites.isEmpty {
                     TVVideoShelf(title: "Favorites", videos: library.favorites) { selectedVideo = $0 }
                 } else {

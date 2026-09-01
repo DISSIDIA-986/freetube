@@ -11,6 +11,7 @@ struct TVVideoDetailView: View {
     @State private var hlsLoader: TVHLSResourceLoader?
     @State private var message: String?
     @State private var playbackMonitor: Task<Void, Never>?
+    @State private var progressTask: Task<Void, Never>?
     @State private var localPlaybackURL: URL?
 
     var body: some View {
@@ -111,6 +112,9 @@ struct TVVideoDetailView: View {
                 player = AVPlayer(playerItem: item)
                 }
                 player?.automaticallyWaitsToMinimizeStalling = false
+                if let seconds = library.progress(for: video), seconds > 5 {
+                    await player?.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
+                }
                 player?.play()
             } catch {
                 message = diagnosticDescription(for: error)
@@ -118,6 +122,7 @@ struct TVVideoDetailView: View {
         }
         .onDisappear {
             playbackMonitor?.cancel()
+            progressTask?.cancel()
             player?.pause()
             player = nil
             playerItem = nil
@@ -153,6 +158,21 @@ struct TVVideoDetailView: View {
                 }
             }
             await playbackMonitor?.value
+        }
+        .task(id: playerItem) {
+            guard let playerItem, let player else { return }
+            progressTask?.cancel()
+            progressTask = Task { @MainActor in
+                while !Task.isCancelled {
+                    let seconds = player.currentTime().seconds
+                    if seconds.isFinite && seconds > 0 {
+                        library.saveProgress(seconds, for: video)
+                    }
+                    try? await Task.sleep(for: .seconds(5))
+                }
+            }
+            _ = playerItem
+            await progressTask?.value
         }
     }
 

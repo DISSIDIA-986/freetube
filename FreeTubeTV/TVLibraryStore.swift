@@ -7,17 +7,20 @@ final class TVLibraryStore {
     private static let favoritesKey = "tv.freetube.favorites"
     private static let historyKey = "tv.freetube.history"
     private static let searchesKey = "tv.freetube.searches"
+    private static let progressKey = "tv.freetube.progress"
     private static let maxHistoryCount = 50
 
     private(set) var favorites: [TVVideo] = []
     private(set) var history: [TVVideo] = []
     private(set) var recentSearches: [String] = []
+    private(set) var progress: [String: Double] = [:]
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         favorites = load(Self.favoritesKey)
         history = load(Self.historyKey)
         recentSearches = defaults.stringArray(forKey: Self.searchesKey) ?? []
+        progress = defaults.dictionary(forKey: Self.progressKey) as? [String: Double] ?? [:]
     }
 
     func isFavorite(_ video: TVVideo) -> Bool {
@@ -59,6 +62,19 @@ final class TVLibraryStore {
     func clearSearches() {
         recentSearches.removeAll()
         defaults.removeObject(forKey: Self.searchesKey)
+    }
+
+    func progress(for video: TVVideo) -> Double? { progress[video.id] }
+
+    func saveProgress(_ seconds: Double, for video: TVVideo) {
+        guard seconds.isFinite, seconds >= 0 else { return }
+        progress[video.id] = seconds
+        defaults.set(progress, forKey: Self.progressKey)
+    }
+
+    func clearProgress(for video: TVVideo) {
+        progress.removeValue(forKey: video.id)
+        defaults.set(progress, forKey: Self.progressKey)
     }
 
     private let defaults: UserDefaults

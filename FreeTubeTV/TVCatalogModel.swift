@@ -140,10 +140,16 @@ final class TVCatalogModel {
     func syncHistoryToGateway() async {
         guard let base = gatewayBaseURL, let history = libraryStore?.history else { return }
         do {
+            let (remoteData, remoteResponse) = try await URLSession.shared.data(from: base.appendingPathComponent("sync/history"))
+            if (remoteResponse as? HTTPURLResponse)?.statusCode == 200 {
+                let remote = try JSONDecoder().decode(SyncedHistoryResponse.self, from: remoteData)
+                libraryStore?.mergeHistory(remote.videos)
+            }
+            let mergedHistory = libraryStore?.history ?? history
             var request = URLRequest(url: base.appendingPathComponent("sync/history"))
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONEncoder().encode(["videos": history])
+            request.httpBody = try JSONEncoder().encode(["videos": mergedHistory])
             _ = try await URLSession.shared.data(for: request)
         } catch { }
     }
@@ -440,4 +446,8 @@ private struct CloudPlaylist: Decodable {
     let title: String
     let count: Int
     let thumbnailURL: URL?
+}
+
+private struct SyncedHistoryResponse: Decodable {
+    let videos: [TVVideo]
 }

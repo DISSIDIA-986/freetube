@@ -45,6 +45,15 @@ final class TVLibraryStore {
         save(history, key: Self.historyKey)
     }
 
+    func mergeHistory(_ remote: [TVVideo]) {
+        var merged = remote
+        for video in history where !merged.contains(where: { $0.id == video.id }) {
+            merged.append(video)
+        }
+        history = Array(merged.prefix(Self.maxHistoryCount))
+        save(history, key: Self.historyKey)
+    }
+
     func clearHistory() {
         history.removeAll()
         defaults.removeObject(forKey: Self.historyKey)

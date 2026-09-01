@@ -52,6 +52,13 @@ final class TVLibraryStoreTests: XCTestCase {
         XCTAssertTrue(TVLibraryStore(defaults: defaults).history.isEmpty)
     }
 
+    func testMergeHistoryDeduplicatesAndKeepsRemoteOrder() {
+        let store = TVLibraryStore(defaults: defaults)
+        store.recordHistory(makeVideo(id: "local"))
+        store.mergeHistory([makeVideo(id: "remote"), makeVideo(id: "local")])
+        XCTAssertEqual(store.history.map(\.id), ["remote", "local"])
+    }
+
     private func makeVideo(id: String) -> TVVideo {
         TVVideo(id: id, title: "Title \(id)", channel: "Channel", thumbnailURL: nil, duration: "1:00")
     }

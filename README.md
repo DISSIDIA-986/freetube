@@ -3,12 +3,30 @@
 ## Apple TV 4K (tvOS)
 
 The repository includes a separate `FreeTubeTV.xcodeproj` for the tvOS MVP. It keeps the existing
-iOS app target unchanged and provides anonymous search, video cards, video details, and native
-`VideoPlayer` playback with Siri Remote navigation.
+iOS app target unchanged and provides anonymous home/search, video cards, full-screen playback,
+and Siri Remote navigation.
 
 Open `FreeTubeTV.xcodeproj` in Xcode, select the `FreeTubeTV` scheme, choose an Apple TV simulator
 or a connected Apple TV device, set your Apple Development team, and run. The tvOS target uses
 Bundle ID `com.neoniu.FreeTubeTV` and the YouTubeKit package already used by the iOS app.
+
+### Apple TV playback gateway
+
+YouTube's current adaptive streams are often separate video/audio tracks and may be rejected by
+tvOS AVPlayer. The tvOS app therefore first asks a Mac on the same LAN to resolve and merge a
+H.264/AAC MP4 with `yt-dlp` and `ffmpeg`.
+
+On the Mac running the app's gateway:
+
+```sh
+brew install yt-dlp ffmpeg
+node gateway/server.mjs
+```
+
+The gateway listens on port `8787`; the current development build points to `192.168.1.79:8787`.
+Update `gatewayBaseURL` in `FreeTubeTV/TVCatalogModel.swift` if the Mac's LAN address changes.
+The first play of a new video waits for the download/merge to finish; subsequent plays use the
+local cache in `gateway-cache/` and support HTTP Range requests.
 
 A native SwiftUI YouTube client for iOS. Cookie-based auth, AVPlayer playback, offline downloads, no Google API key.
 
@@ -99,6 +117,7 @@ If you do not agree with these terms, do not install or use this software.
 | Area | Status |
 |---|---|
 | Home / Search / Video detail | ✓ |
+| tvOS Home / Search / Full-screen playback | ✓ |
 | Login (Google cookies via WKWebView) | ✓ |
 | Subscriptions / Library / History | ✓ |
 | Channel screen / Playlist screen | ✓ |

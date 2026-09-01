@@ -7,7 +7,10 @@ struct TVPlayerSurface: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> AVPlayerViewController {
         let controller = AVPlayerViewController()
         controller.player = player
-        controller.showsPlaybackControls = true
+        // Use the SwiftUI transport bar above. AVPlayerViewController's native
+        // bar otherwise captures Siri Remote focus and makes overlay actions
+        // visible but unreachable.
+        controller.showsPlaybackControls = false
         controller.allowsPictureInPicturePlayback = true
         return controller
     }

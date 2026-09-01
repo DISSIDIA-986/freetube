@@ -19,8 +19,8 @@ struct TVVideoDetailView: View {
     @State private var isLookingUpChannel = false
     @State private var channelLookupFailed = false
     @State private var isMuted = false
-    @State private var hasCaptions = false
     @State private var captionsEnabled = false
+    @State private var isPlaying = true
     @FocusState private var focusedControl: PlayerControl?
 
     private let resolutionOptions = [360, 480, 720, 1080, 1440, 2160]
@@ -62,7 +62,7 @@ struct TVVideoDetailView: View {
                 Spacer()
 
                 if player != nil {
-                    HStack(spacing: 12) {
+                    HStack(spacing: 10) {
                         Menu {
                             ForEach(resolutionOptions, id: \.self) { resolution in
                                 Button("\(resolution)p") { selectedResolution = resolution }
@@ -73,12 +73,12 @@ struct TVVideoDetailView: View {
                         .focused($focusedControl, equals: .resolution)
 
                         Button {
-                            toggleCaptions()
+                            captionsEnabled.toggle()
+                            applyCaptionsSelection()
                         } label: {
                             Label(captionsEnabled ? "CC On" : "CC Off", systemImage: captionsEnabled ? "captions.bubble.fill" : "captions.bubble")
                         }
                         .focused($focusedControl, equals: .captions)
-                        .disabled(!hasCaptions)
 
                         Button {
                             isMuted.toggle()
@@ -105,10 +105,11 @@ struct TVVideoDetailView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .focusSection()
-                    .padding(.horizontal, 36)
-                    .padding(.vertical, 18)
-                    .background(.black.opacity(0.72), in: Capsule())
-                    .padding(.bottom, 42)
+                    // AVKit owns Audio Adjustments and Subtitles in its transport bar.
+                    // Keep our two additions compact and visually aligned with that bar.
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .padding(.bottom, 78)
                     .padding(.trailing, 48)
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .zIndex(10)
@@ -117,6 +118,10 @@ struct TVVideoDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.black)
+        .onPlayPauseCommand {
+            isPlaying.toggle()
+            if isPlaying { player?.play() } else { player?.pause() }
+        }
         .sheet(item: $channelCollection) { collection in
             TVCollectionView(collection: collection) { selected in
                 channelCollection = nil
@@ -131,6 +136,7 @@ struct TVVideoDetailView: View {
             player = nil
             playerItem = nil
             message = nil
+            isPlaying = true
             do {
                 let source = try await model.playbackSource(for: video, preferredHeight: selectedResolution)
                 library.recordHistory(video)
@@ -214,11 +220,6 @@ struct TVVideoDetailView: View {
         }
         .task(id: playerItem) {
             guard let item = playerItem, let player else { return }
-            if let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .legible) {
-                hasCaptions = !group.options.isEmpty
-            } else {
-                hasCaptions = false
-            }
             playbackMonitor?.cancel()
             playbackMonitor = Task { @MainActor in
                 for _ in 0..<30 {
@@ -271,15 +272,10 @@ struct TVVideoDetailView: View {
         return "The stream did not become playable on Apple TV."
     }
 
-    private func toggleCaptions() {
+    private func applyCaptionsSelection() {
         guard let item = playerItem,
               let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .legible) else { return }
-        if captionsEnabled {
-            item.select(nil, in: group)
-        } else {
-            item.select(group.defaultOption ?? group.options.first, in: group)
-        }
-        captionsEnabled.toggle()
+        item.select(captionsEnabled ? (group.defaultOption ?? group.options.first) : nil, in: group)
     }
 
     private func diagnosticDescription(for error: Error) -> String {
